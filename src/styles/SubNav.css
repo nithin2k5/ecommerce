@@ -1,0 +1,78 @@
+.subnav {
+  background-color: var(--white);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.subnav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.category-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.category-link:hover {
+  color: var(--primary-color);
+  background-color: rgba(74, 144, 226, 0.1);
+  transform: translateY(-2px);
+}
+
+.category-icon {
+  font-size: 1.5rem;
+}
+
+.category-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .subnav-content {
+    padding: 0 1rem;
+    overflow-x: auto;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .subnav-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  .category-link {
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+}
+
+/* Add a gradient fade effect on mobile when scrolling */
+@media (max-width: 768px) {
+  .subnav::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 30px;
+    background: linear-gradient(to right, transparent, var(--white));
+    pointer-events: none;
+  }
+} 

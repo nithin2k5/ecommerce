@@ -1,0 +1,88 @@
+.home-appliances {
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+
+.appliances-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.appliance-card {
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.appliance-card:hover {
+  transform: translateY(-5px);
+}
+
+.appliance-image {
+  position: relative;
+  height: 200px;
+}
+
+.appliance-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.discount-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--accent-color);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.appliance-info {
+  padding: 1rem;
+}
+
+.category {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.appliance-info h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.price {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+@media (max-width: 1024px) {
+  .appliances-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .appliances-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .appliances-grid {
+    grid-template-columns: 1fr;
+  }
+} 

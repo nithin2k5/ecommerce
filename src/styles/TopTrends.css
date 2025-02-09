@@ -1,0 +1,111 @@
+.top-trends {
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.section-header h2 {
+  font-size: 1.8rem;
+  color: var(--text-primary);
+}
+
+.view-all {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary-color);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.view-all:hover {
+  transform: translateX(5px);
+}
+
+.trends-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.trend-card {
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease;
+}
+
+.trend-card:hover {
+  transform: translateY(-5px);
+}
+
+.trend-image {
+  position: relative;
+  height: 200px;
+}
+
+.trend-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.discount-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--accent-color);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.trend-info {
+  padding: 1rem;
+}
+
+.category {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.trend-info h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.price {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+@media (max-width: 1024px) {
+  .trends-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .trends-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .trends-grid {
+    grid-template-columns: 1fr;
+  }
+} 
