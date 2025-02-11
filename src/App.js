@@ -13,6 +13,11 @@ import Register from './components/auth/Register';
 import HomePage from './components/home/HomePage';
 import MensFashion from './components/home/MensFashion';
 import WomensFashion from './components/home/WomensFashion';
+import MobileProducts from './components/pages/MobileProducts';
+import ElectronicsProducts from './components/pages/ElectronicsProducts';
+import AppliancesProducts from './components/pages/AppliancesProducts';
+import FashionProducts from './components/pages/FashionProducts';
+import ProvisionsProducts from './components/pages/ProvisionsProducts';
 import './styles/global.css';
 
 function App() {
@@ -32,6 +37,11 @@ function App() {
               <Route path="/checkout" element={<CheckoutForm />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/category/mobiles" element={<MobileProducts />} />
+              <Route path="/category/electronics" element={<ElectronicsProducts />} />
+              <Route path="/category/appliances" element={<AppliancesProducts />} />
+              <Route path="/category/fashion" element={<FashionProducts />} />
+              <Route path="/category/provisions" element={<ProvisionsProducts />} />
             </Routes>
           </main>
           <Footer />

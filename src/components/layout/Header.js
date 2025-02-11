@@ -11,8 +11,8 @@ function Header() {
     <header className="header">
       <div className="header-content">
         <Link to="/" className="logo">
-          <img src="/logo.png" alt="Store Logo" className="logo-image" />
-          <span className="logo-text">E-Store</span>
+        
+          <span className="logo-text">Pazar</span>
         </Link>
 
         <div className="search-bar">

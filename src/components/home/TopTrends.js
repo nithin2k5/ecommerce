@@ -7,7 +7,7 @@ function TopTrends() {
     {
       id: 1,
       title: 'iPhone 14 Pro',
-      price: '$999.99',
+      price: '₹89,999',
       discount: '10% OFF',
       image: 'https://images.unsplash.com/photo-1678685888221-cda773a3dcdb',
       category: 'Smartphones'
@@ -15,7 +15,7 @@ function TopTrends() {
     {
       id: 2,
       title: 'MacBook Pro M2',
-      price: '$1299.99',
+      price: '₹1,19,999',
       discount: '15% OFF',
       image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca4',
       category: 'Laptops'
@@ -23,7 +23,7 @@ function TopTrends() {
     {
       id: 3,
       title: 'Samsung Galaxy Watch 5',
-      price: '$299.99',
+      price: '₹24,999',
       discount: '20% OFF',
       image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a',
       category: 'Smartwatches'
@@ -31,7 +31,7 @@ function TopTrends() {
     {
       id: 4,
       title: 'AirPods Pro',
-      price: '$249.99',
+      price: '₹19,999',
       discount: '12% OFF',
       image: 'https://images.unsplash.com/photo-1588423771073-b8903fbb85b5',
       category: 'Audio'

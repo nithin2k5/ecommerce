@@ -7,7 +7,7 @@ function WomensFashion() {
     {
       id: 'w1',
       title: 'Floral Summer Dress',
-      price: '$89.99',
+      price: '₹7,999',
       discount: '20% OFF',
       image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1',
       category: 'Dresses'
@@ -15,7 +15,7 @@ function WomensFashion() {
     {
       id: 'w2',
       title: 'Designer Handbag',
-      price: '$199.99',
+      price: '₹16,999',
       discount: '15% OFF',
       image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3',
       category: 'Accessories'
@@ -23,7 +23,7 @@ function WomensFashion() {
     {
       id: 'w3',
       title: 'Elegant Blazer',
-      price: '$149.99',
+      price: '₹12,999',
       discount: '25% OFF',
       image: 'https://images.unsplash.com/photo-1591369822096-ffd140ec948f',
       category: 'Formal'
@@ -31,7 +31,7 @@ function WomensFashion() {
     {
       id: 'w4',
       title: 'Stylish Heels',
-      price: '$119.99',
+      price: '₹9,999',
       discount: '30% OFF',
       image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2',
       category: 'Footwear'

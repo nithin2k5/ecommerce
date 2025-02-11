@@ -7,7 +7,7 @@ function MensFashion() {
     {
       id: 'm1',
       title: 'Casual Denim Jacket',
-      price: '$79.99',
+      price: '₹6,999',
       discount: '25% OFF',
       image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea',
       category: 'Jackets'
@@ -15,7 +15,7 @@ function MensFashion() {
     {
       id: 'm2',
       title: 'Slim Fit Suit',
-      price: '$299.99',
+      price: '₹24,999',
       discount: '20% OFF',
       image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35',
       category: 'Formal'
@@ -23,7 +23,7 @@ function MensFashion() {
     {
       id: 'm3',
       title: 'Premium Cotton Shirt',
-      price: '$49.99',
+      price: '₹3,999',
       discount: '15% OFF',
       image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c',
       category: 'Shirts'
@@ -31,7 +31,7 @@ function MensFashion() {
     {
       id: 'm4',
       title: 'Designer Sneakers',
-      price: '$129.99',
+      price: '₹10,999',
       discount: '30% OFF',
       image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d',
       category: 'Footwear'
