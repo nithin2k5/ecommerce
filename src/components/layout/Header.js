@@ -11,7 +11,6 @@ function Header() {
     <header className="header">
       <div className="header-content">
         <Link to="/" className="logo">
-        
           <span className="logo-text">Pazar</span>
         </Link>
 
@@ -31,6 +30,11 @@ function Header() {
             <span>Orders</span>
           </Link>
           
+          <Link to="/business-login" className="nav-link">
+            <FaUser />
+            <span>Business Login</span>
+          </Link>
+
           <Link to="/login" className="nav-link">
             <FaUser />
             <span>Login</span>

@@ -18,6 +18,7 @@ import ElectronicsProducts from './components/pages/ElectronicsProducts';
 import AppliancesProducts from './components/pages/AppliancesProducts';
 import FashionProducts from './components/pages/FashionProducts';
 import ProvisionsProducts from './components/pages/ProvisionsProducts';
+import LoginForm from './components/auth/LoginForm';
 import './styles/global.css';
 
 function App() {
@@ -35,7 +36,8 @@ function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<CheckoutForm />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<LoginForm />} />
+              <Route path="/business-login" element={<LoginForm isBusinessLogin={true} />} />
               <Route path="/register" element={<Register />} />
               <Route path="/category/mobiles" element={<MobileProducts />} />
               <Route path="/category/electronics" element={<ElectronicsProducts />} />
