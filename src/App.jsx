@@ -19,6 +19,8 @@ import AppliancesProducts from './components/pages/AppliancesProducts';
 import FashionProducts from './components/pages/FashionProducts';
 import ProvisionsProducts from './components/pages/ProvisionsProducts';
 import LoginForm from './components/auth/LoginForm';
+import BusinessDashboard from './components/pages/BusinessDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 import './styles/global.css';
 
 function App() {
@@ -44,6 +46,11 @@ function App() {
               <Route path="/category/appliances" element={<AppliancesProducts />} />
               <Route path="/category/fashion" element={<FashionProducts />} />
               <Route path="/category/provisions" element={<ProvisionsProducts />} />
+              <Route path="/business/dashboard" element={
+                <ProtectedRoute>
+                  <BusinessDashboard />
+                </ProtectedRoute>
+              } />
             </Routes>
           </main>
           <Footer />

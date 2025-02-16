@@ -14,6 +14,16 @@ function Footer() {
           <p>Phone: (555) 123-4567</p>
         </div>
         <div className="footer-section">
+          <h3>Quick Links</h3>
+          <div className="footer-links">
+            <a href="/">Home</a>
+            <a href="/products">Products</a>
+            <a href="/categories">Categories</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+          </div>
+        </div>
+        <div className="footer-section">
           <h3>Follow Us</h3>
           <div className="social-links">
             <a href="#facebook">Facebook</a>

@@ -37,4 +37,20 @@
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid #ddd;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-links a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: #007bff;
 } 
