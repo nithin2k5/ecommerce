@@ -30,7 +30,7 @@ function App() {
         <div className="App">
           <Header />
           <SubNav />
-          <main>
+          <main className="neon-box">
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/category/mens-fashion" element={<MensFashion />} />
