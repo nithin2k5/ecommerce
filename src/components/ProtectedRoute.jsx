@@ -1,21 +1,29 @@
+import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-function ProtectedRoute({ children }) {
-  // Get authentication status from your auth context or local storage
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  const userType = localStorage.getItem('userType');
-
+const ProtectedRoute = ({ children, roles = [] }) => {
+  // Get auth state from Redux
+  const auth = useSelector(state => state.auth);
+  
+  // Check if user is logged in
+  const isAuthenticated = localStorage.getItem('token') !== null;
+  
+  // Get user roles from localStorage if not in Redux
+  const userRoles = auth?.user?.roles || 
+    (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).roles : []);
+  
+  // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/business-login" />;
   }
-
-  if (userType !== 'business') {
-    // Redirect to home if not a business user
-    return <Navigate to="/" replace />;
+  
+  // If roles are specified and user doesn't have any required role
+  if (roles.length > 0 && !roles.some(role => userRoles.includes(role))) {
+    return <Navigate to="/" />;
   }
-
+  
   return children;
-}
+};
 
 export default ProtectedRoute; 

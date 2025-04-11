@@ -13,16 +13,14 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     @Autowired
@@ -38,26 +36,22 @@ public class AuthController {
     private UserRepository userRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody AuthRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        Map<String, Object> response = new HashMap<>();
         
-        User user = userRepository.findByUsername(loginRequest.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // Simple hardcoded authentication for testing
+        if ("businessadmin".equals(credentials.get("username")) && 
+            "admin123".equals(credentials.get("password"))) {
+            
+            response.put("status", "success");
+            response.put("token", "sample-token");
+            response.put("role", "BUSINESS_ADMIN");
+            return ResponseEntity.ok(response);
+        }
         
-        AuthResponse response = new AuthResponse();
-        response.setToken(jwt);
-        response.setUsername(user.getUsername());
-        response.setRoles(user.getRoles());
-        
-        return ResponseEntity.ok(response);
+        response.put("status", "error");
+        response.put("message", "Invalid credentials");
+        return ResponseEntity.badRequest().body(response);
     }
 
     @PostMapping("/register")

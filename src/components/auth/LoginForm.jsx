@@ -1,157 +1,167 @@
-import { useState } from 'react';
-import { FaGoogle } from 'react-icons/fa';
-import '../../styles/LoginForm.css';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import './LoginForm.css';
 
-function LoginForm({ isBusinessLogin = false }) {
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    mobileNumber: '',
-    verificationCode: '',
-    businessName: '',
-    businessType: '',
-  });
-  const [showVerification, setShowVerification] = useState(false);
+const LoginForm = ({ isBusinessLogin = false }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!showVerification) {
-      // Send verification code logic here
-      setShowVerification(true);
-    } else {
-      // Verify code and complete login/register
-      console.log('Form submitted:', formData);
-    }
-  };
+    setError('');
+    setLoading(true);
 
-  const handleGoogleLogin = () => {
-    // Implement Google login logic here
-    console.log('Google login clicked');
+    // Simple hardcoded authentication for demo purposes
+    if (isBusinessLogin && username === 'admin' && password === 'admin') {
+      // Create mock user data
+      const userData = {
+        username: 'admin',
+        token: 'sample-token-12345',
+        roles: ['BUSINESS_ADMIN']
+      };
+
+      // Store auth data in localStorage
+      localStorage.setItem('token', userData.token);
+      localStorage.setItem('user', JSON.stringify({
+        username: userData.username,
+        roles: userData.roles
+      }));
+
+      // Dispatch login success
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: userData
+      });
+
+      // Navigate to dashboard
+      navigate('/business/dashboard');
+      return;
+    }
+
+    try {
+      // This is the regular API call implementation
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Check if user has business access
+      if (isBusinessLogin && 
+          !(data.roles.includes('BUSINESS_ADMIN') || data.roles.includes('ADMIN'))) {
+        setError('You do not have business account access');
+        setLoading(false);
+        return;
+      }
+
+      // Store auth data
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify({
+        username: data.username,
+        roles: data.roles
+      }));
+
+      // Dispatch login success
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: data
+      });
+
+      // Navigate based on role
+      if (data.roles.includes('BUSINESS_ADMIN')) {
+        navigate('/business/dashboard');
+      } else if (data.roles.includes('ADMIN')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
+
+    } catch (error) {
+      setError(error.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="login-container">
-      <h2>{isBusinessLogin ? 'Business ' : ''}{isLogin ? 'Login' : 'Register'}</h2>
-      
-      <button className="google-login-btn" onClick={handleGoogleLogin}>
-        <FaGoogle />
-        <span>Continue with Google</span>
-      </button>
-
-      <div className="divider">
-        <span>OR</span>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        {!isLogin && (
+      <div className="login-card">
+        <h2>{isBusinessLogin ? 'Business Login' : 'Customer Login'}</h2>
+        {error && <div className="error-message">{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="username">Username</label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required={!isLogin}
-            />
-          </div>
-        )}
-
-        {isBusinessLogin && !isLogin && (
-          <>
-            <div className="form-group">
-              <label htmlFor="businessName">Business Name</label>
-              <input
-                type="text"
-                id="businessName"
-                name="businessName"
-                value={formData.businessName}
-                onChange={handleInputChange}
-                required={!isLogin}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="businessType">Business Type</label>
-              <select
-                id="businessType"
-                name="businessType"
-                value={formData.businessType}
-                onChange={handleInputChange}
-                required={!isLogin}
-              >
-                <option value="">Select Business Type</option>
-                <option value="retail">Retail</option>
-                <option value="wholesale">Wholesale</option>
-                <option value="manufacturer">Manufacturer</option>
-                <option value="service">Service Provider</option>
-              </select>
-            </div>
-          </>
-        )}
-
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="mobileNumber">Mobile Number</label>
-          <input
-            type="tel"
-            id="mobileNumber"
-            name="mobileNumber"
-            value={formData.mobileNumber}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-
-        {showVerification && (
-          <div className="form-group">
-            <label htmlFor="verificationCode">Verification Code</label>
-            <input
-              type="text"
-              id="verificationCode"
-              name="verificationCode"
-              value={formData.verificationCode}
-              onChange={handleInputChange}
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
+          
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+        
+        {!isBusinessLogin && (
+          <div className="login-footer">
+            <p>Don't have an account? <a href="/register">Register</a></p>
+          </div>
         )}
-
-        <button type="submit" className="submit-btn">
-          {showVerification ? 'Verify Code' : 'Send Verification Code'}
-        </button>
-      </form>
-
-      <p className="toggle-form">
-        {isLogin ? "Don't have an account? " : "Already have an account? "}
-        <button
-          className="toggle-btn"
-          onClick={() => setIsLogin(!isLogin)}
-        >
-          {isLogin ? 'Register' : 'Login'}
-        </button>
-      </p>
+        
+        {isBusinessLogin && (
+          <div className="login-footer">
+            <p>For business inquiries, please contact our support team.</p>
+          </div>
+        )}
+      </div>
+      
+      {isBusinessLogin ? (
+        <div className="login-sample-credentials">
+          <h3>Sample Business Credentials</h3>
+          <p><strong>Business Admin:</strong> businessadmin / admin123</p>
+          <p><strong>Admin:</strong> admin / admin123</p>
+          <p><strong>Fashion Admin:</strong> fashionadmin / admin123</p>
+          <p><strong>Electronics Admin:</strong> electronicsadmin / admin123</p>
+        </div>
+      ) : (
+        <div className="login-sample-credentials">
+          <h3>Sample Customer Credentials</h3>
+          <p><strong>Regular User:</strong> user / user123</p>
+          <p><strong>John Doe:</strong> john / password</p>
+          <p><strong>Jane Smith:</strong> jane / password</p>
+          <p><strong>Robert Johnson:</strong> robert / password</p>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default LoginForm; 
