@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Header from './components/layout/Header';
 import SubNav from './components/layout/SubNav';
 import Footer from './components/layout/Footer';
@@ -21,6 +23,8 @@ import ProvisionsProducts from './components/pages/ProvisionsProducts';
 import LoginForm from './components/auth/LoginForm';
 import BusinessDashboard from './components/dashboard/BusinessDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import BusinessRegister from './components/auth/BusinessRegister';
+import ApiTester from './components/utils/ApiTester';
 
 import './styles/global.css';
 
@@ -49,9 +53,12 @@ function App() {
               <Route path="/category/fashion" element={<FashionProducts />} />
               <Route path="/category/provisions" element={<ProvisionsProducts />} />
               <Route path="/business/dashboard" element={<BusinessDashboard />} />
+              <Route path="/business-register" element={<BusinessRegister />} />
+              <Route path="/api-test" element={<ApiTester />} />
             </Routes>
           </main>
           <Footer />
+          <ToastContainer position="top-right" autoClose={5000} />
         </div>
       </Router>
     </Provider>

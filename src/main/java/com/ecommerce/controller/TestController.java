@@ -11,17 +11,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/test")
+@RequestMapping("/api/test")
 public class TestController {
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    @GetMapping("/hello")
-    public Map<String, String> hello() {
+    @GetMapping("/status")
+    public Map<String, String> getStatus() {
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Hello from Spring Boot!");
         response.put("status", "success");
+        response.put("message", "Spring Boot API is running");
         return response;
     }
 

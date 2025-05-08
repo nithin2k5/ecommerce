@@ -1,0 +1,120 @@
+.api-tester {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.api-tester h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.connection-status {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.status {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.status.checking {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status.connected {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status.failed {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.error-box {
+  background-color: #fff3e0;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 20px 0;
+}
+
+.error-box h3 {
+  color: #e65100;
+  margin-bottom: 10px;
+}
+
+.troubleshooting {
+  margin-top: 15px;
+}
+
+.troubleshooting h4 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.troubleshooting ol {
+  padding-left: 20px;
+}
+
+.troubleshooting li {
+  margin-bottom: 10px;
+}
+
+.troubleshooting code {
+  background-color: #f5f5f5;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.response-box {
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 20px 0;
+}
+
+.response-box h3 {
+  color: #2e7d32;
+  margin-bottom: 10px;
+}
+
+.response-box pre {
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  overflow: auto;
+  max-height: 200px;
+}
+
+.test-button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 12px 25px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.test-button:hover {
+  background-color: #1976d2;
+}
+
+.test-button:disabled {
+  background-color: #bbdefb;
+  cursor: not-allowed;
+} 

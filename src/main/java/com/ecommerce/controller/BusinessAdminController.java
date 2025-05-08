@@ -23,28 +23,30 @@ public class BusinessAdminController {
 
     @GetMapping("/admins")
     public ResponseEntity<List<UserDTO>> getAllAdmins() {
-        return ResponseEntity.ok(userService.getUsersByRole(Role.ADMIN));
+        List<UserDTO> admins = userService.getUsersByRole(Role.ADMIN);
+        return ResponseEntity.ok(admins);
     }
 
     @PostMapping("/admins")
-    public ResponseEntity<?> createAdmin(@RequestBody User user) {
-        if (userService.usernameExists(user.getUsername())) {
+    public ResponseEntity<?> createAdmin(@RequestBody UserDTO userDTO) {
+        if (userService.usernameExists(userDTO.getUsername())) {
             return ResponseEntity.badRequest().body("Username is already taken");
         }
 
-        if (userService.emailExists(user.getEmail())) {
+        if (userService.emailExists(userDTO.getEmail())) {
             return ResponseEntity.badRequest().body("Email is already in use");
         }
 
         Set<Role> roles = new HashSet<>();
         roles.add(Role.ADMIN);
         
-        return ResponseEntity.ok(userService.createUser(user, roles));
+        UserDTO createdUser = userService.createUser(userDTO, roles);
+        return ResponseEntity.ok(createdUser);
     }
 
     @PutMapping("/admins/{id}")
-    public ResponseEntity<?> updateAdmin(@PathVariable String id, @RequestBody User user) {
-        UserDTO updatedUser = userService.updateUser(id, user);
+    public ResponseEntity<?> updateAdmin(@PathVariable String id, @RequestBody UserDTO userDTO) {
+        UserDTO updatedUser = userService.updateUser(id, userDTO);
         if (updatedUser != null) {
             return ResponseEntity.ok(updatedUser);
         }

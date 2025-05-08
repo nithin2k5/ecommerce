@@ -14,9 +14,13 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
-        // Allow all origins for development - update this for production
-        config.addAllowedOrigin("*");
+        // Allow requests from your React app
+        config.addAllowedOrigin("http://localhost:3000");
+        
+        // Allow all headers
         config.addAllowedHeader("*");
+        
+        // Allow all methods (GET, POST, etc.)
         config.addAllowedMethod("*");
         
         source.registerCorsConfiguration("/**", config);

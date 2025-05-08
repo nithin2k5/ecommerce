@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
-import { FaRupeeSign, FaShoppingCart } from 'react-icons/fa';
+import { useDispatch } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { FaRupeeSign, FaShoppingCart, FaEye } from 'react-icons/fa';
+import { addToCart } from '../../features/cartSlice';
 import '../../styles/Products.css';
 
 function AppliancesProducts() {
+  const dispatch = useDispatch();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,22 +57,79 @@ function AppliancesProducts() {
         id: 1,
         name: "LG 8kg Washing Machine",
         price: 35990,
-        image: "https://example.com/washing.jpg",
-        description: "Fully Automatic Front Load"
+        image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=500",
+        description: "Fully Automatic Front Load, AI Direct Drive",
+        brand: "LG",
+        rating: 4.7,
+        reviews: 189,
+        stock: 15,
+        originalPrice: 39990,
+        discount: 10
       },
       {
         id: 2,
         name: "Samsung 253L Refrigerator",
         price: 24990,
-        image: "https://example.com/fridge.jpg",
-        description: "Double Door Frost Free"
+        image: "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=500",
+        description: "Double Door Frost Free, Digital Inverter",
+        brand: "Samsung",
+        rating: 4.6,
+        reviews: 156,
+        stock: 20,
+        originalPrice: 27990,
+        discount: 11
       },
       {
         id: 3,
         name: "Havells Air Conditioner",
         price: 32990,
-        image: "https://example.com/ac.jpg",
-        description: "1.5 Ton Split AC, 5 Star"
+        image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=500",
+        description: "1.5 Ton Split AC, 5 Star, Inverter",
+        brand: "Havells",
+        rating: 4.5,
+        reviews: 132,
+        stock: 12,
+        originalPrice: 36990,
+        discount: 11
+      },
+      {
+        id: 4,
+        name: "Whirlpool Microwave",
+        price: 12990,
+        image: "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=500",
+        description: "25L Convection, 10 Power Levels",
+        brand: "Whirlpool",
+        rating: 4.4,
+        reviews: 98,
+        stock: 25,
+        originalPrice: 14990,
+        discount: 13
+      },
+      {
+        id: 5,
+        name: "Philips Air Purifier",
+        price: 15990,
+        image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=500",
+        description: "HEPA Filter, Smart Air Quality Monitor",
+        brand: "Philips",
+        rating: 4.3,
+        reviews: 87,
+        stock: 18,
+        originalPrice: 17990,
+        discount: 11
+      },
+      {
+        id: 6,
+        name: "Bosch Dishwasher",
+        price: 44990,
+        image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=500",
+        description: "12 Place Settings, 6 Wash Programs",
+        brand: "Bosch",
+        rating: 4.6,
+        reviews: 145,
+        stock: 10,
+        originalPrice: 49990,
+        discount: 10
       }
     ];
 
@@ -138,10 +199,19 @@ function AppliancesProducts() {
                   <FaRupeeSign className="rupee-icon" />
                   {formatPrice(product.price)}
                 </div>
-                <button className="add-to-cart-btn">
-                  <FaShoppingCart className="cart-icon" />
-                  Add to Cart
-                </button>
+                <div className="product-buttons">
+                  <Link to={`/product/${product.id}`} className="view-btn">
+                    <FaEye className="view-icon" />
+                    View
+                  </Link>
+                  <button 
+                    className="add-to-cart-btn"
+                    onClick={() => dispatch(addToCart(product))}
+                  >
+                    <FaShoppingCart className="cart-icon" />
+                    Add to Cart
+                  </button>
+                </div>
               </div>
             </div>
           ))}

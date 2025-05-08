@@ -8,26 +8,29 @@ import com.ecommerce.repository.UserRepository;
 import com.ecommerce.security.JwtTokenProvider;
 import com.ecommerce.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JwtTokenProvider tokenProvider;
+    private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     private UserService userService;
@@ -36,38 +39,53 @@ public class AuthController {
     private UserRepository userRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-        Map<String, Object> response = new HashMap<>();
-        
-        // Simple hardcoded authentication for testing
-        if ("businessadmin".equals(credentials.get("username")) && 
-            "admin123".equals(credentials.get("password"))) {
-            
-            response.put("status", "success");
-            response.put("token", "sample-token");
-            response.put("role", "BUSINESS_ADMIN");
-            return ResponseEntity.ok(response);
+    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String token = jwtTokenProvider.generateToken(userDetails);
+
+            User user = userService.getUserByUsername(authRequest.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getId()));
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Invalid username or password");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
-        
-        response.put("status", "error");
-        response.put("message", "Invalid credentials");
-        return ResponseEntity.badRequest().body(response);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
-        if (userService.usernameExists(user.getUsername())) {
-            return ResponseEntity.badRequest().body("Username is already taken");
-        }
+    public ResponseEntity<?> register(@RequestBody User user) {
+        try {
+            // Check if username or email already exists
+            if (userService.usernameExists(user.getUsername())) {
+                Map<String, String> response = new HashMap<>();
+                response.put("error", "Username already exists");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
 
-        if (userService.emailExists(user.getEmail())) {
-            return ResponseEntity.badRequest().body("Email is already in use");
-        }
+            if (userService.emailExists(user.getEmail())) {
+                Map<String, String> response = new HashMap<>();
+                response.put("error", "Email already exists");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
 
-        // Set default role as USER
-        Set<Role> roles = new HashSet<>();
-        roles.add(Role.USER);
-        
-        return ResponseEntity.ok(userService.createUser(user, roles));
+            // Create new user
+            Set<Role> roles = new HashSet<>();
+            roles.add(Role.USER);
+            User registeredUser = userService.createUser(user, roles);
+
+            return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 } 
