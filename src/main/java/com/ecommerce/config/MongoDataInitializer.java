@@ -7,6 +7,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.CreateCollectionOptions;
+import com.mongodb.client.model.ValidationOptions;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -42,46 +43,46 @@ public class MongoDataInitializer implements CommandLineRunner {
 
     private void createCollectionsWithValidation(MongoDatabase database) {
         // Users collection validation
-        CreateCollectionOptions userOptions = new CreateCollectionOptions()
-            .validator(new Document("$jsonSchema", new Document()
-                .append("bsonType", "object")
-                .append("required", Arrays.asList("username", "email", "password", "roles"))
-                .append("properties", new Document()
-                    .append("username", new Document("bsonType", "string"))
-                    .append("email", new Document("bsonType", "string"))
-                    .append("password", new Document("bsonType", "string"))
-                    .append("roles", new Document("bsonType", "array"))
-                    .append("active", new Document("bsonType", "bool"))
-                )
+        Document userSchema = new Document("$jsonSchema", new Document()
+            .append("bsonType", "object")
+            .append("required", Arrays.asList("username", "email", "password", "roles"))
+            .append("properties", new Document()
+                .append("username", new Document("bsonType", "string"))
+                .append("email", new Document("bsonType", "string"))
+                .append("password", new Document("bsonType", "string"))
+                .append("roles", new Document("bsonType", "array"))
+                .append("active", new Document("bsonType", "bool"))
             ));
+        CreateCollectionOptions userOptions = new CreateCollectionOptions()
+            .validationOptions(new ValidationOptions().validator(userSchema));
 
         // Products collection validation
-        CreateCollectionOptions productOptions = new CreateCollectionOptions()
-            .validator(new Document("$jsonSchema", new Document()
-                .append("bsonType", "object")
-                .append("required", Arrays.asList("name", "price", "stockQuantity", "categories"))
-                .append("properties", new Document()
-                    .append("name", new Document("bsonType", "string"))
-                    .append("price", new Document("bsonType", "double"))
-                    .append("stockQuantity", new Document("bsonType", "int"))
-                    .append("categories", new Document("bsonType", "array"))
-                    .append("active", new Document("bsonType", "bool"))
-                )
+        Document productSchema = new Document("$jsonSchema", new Document()
+            .append("bsonType", "object")
+            .append("required", Arrays.asList("name", "price", "stockQuantity", "categories"))
+            .append("properties", new Document()
+                .append("name", new Document("bsonType", "string"))
+                .append("price", new Document("bsonType", "double"))
+                .append("stockQuantity", new Document("bsonType", "int"))
+                .append("categories", new Document("bsonType", "array"))
+                .append("active", new Document("bsonType", "bool"))
             ));
+        CreateCollectionOptions productOptions = new CreateCollectionOptions()
+            .validationOptions(new ValidationOptions().validator(productSchema));
 
         // Orders collection validation
-        CreateCollectionOptions orderOptions = new CreateCollectionOptions()
-            .validator(new Document("$jsonSchema", new Document()
-                .append("bsonType", "object")
-                .append("required", Arrays.asList("userId", "products", "quantities", "total", "status"))
-                .append("properties", new Document()
-                    .append("userId", new Document("bsonType", "string"))
-                    .append("products", new Document("bsonType", "array"))
-                    .append("quantities", new Document("bsonType", "array"))
-                    .append("total", new Document("bsonType", "double"))
-                    .append("status", new Document("bsonType", "string"))
-                )
+        Document orderSchema = new Document("$jsonSchema", new Document()
+            .append("bsonType", "object")
+            .append("required", Arrays.asList("userId", "products", "quantities", "total", "status"))
+            .append("properties", new Document()
+                .append("userId", new Document("bsonType", "string"))
+                .append("products", new Document("bsonType", "array"))
+                .append("quantities", new Document("bsonType", "array"))
+                .append("total", new Document("bsonType", "double"))
+                .append("status", new Document("bsonType", "string"))
             ));
+        CreateCollectionOptions orderOptions = new CreateCollectionOptions()
+            .validationOptions(new ValidationOptions().validator(orderSchema));
 
         try {
             database.createCollection("users", userOptions);

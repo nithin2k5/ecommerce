@@ -16,6 +16,7 @@ public class CorsConfig {
         
         // Allow requests from your React app
         config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("http://localhost:3001");
         
         // Allow all headers
         config.addAllowedHeader("*");

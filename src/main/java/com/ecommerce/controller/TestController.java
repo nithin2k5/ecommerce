@@ -3,6 +3,7 @@ package com.ecommerce.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,17 +13,25 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/test")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class TestController {
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    @GetMapping("/hello")
+    public String hello() {
+        return "Hello from the test controller!";
+    }
+    
     @GetMapping("/status")
-    public Map<String, String> getStatus() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "success");
-        response.put("message", "Spring Boot API is running");
-        return response;
+    public String status() {
+        return "API is running";
+    }
+    
+    @GetMapping("/auth")
+    public String auth() {
+        return "You are authenticated!";
     }
 
     @GetMapping("/db-status")

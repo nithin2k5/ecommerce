@@ -9,6 +9,8 @@ com/ecommerce/dto/RegistrationResponse.class
 com/ecommerce/config/SecurityConfig.class
 com/ecommerce/controller/BusinessAdminController.class
 com/ecommerce/model/Order$OrderStatus.class
+com/ecommerce/security/JwtAuthenticationFilter.class
+com/ecommerce/config/CorsConfig.class
 com/ecommerce/exception/GlobalExceptionHandler.class
 com/ecommerce/controller/AuthController.class
 com/ecommerce/model/Product.class
@@ -20,14 +22,18 @@ com/ecommerce/controller/TestController$1.class
 com/ecommerce/dto/AuthResponse.class
 com/ecommerce/model/Role.class
 com/ecommerce/EcommerceApplication.class
+com/ecommerce/controller/UnsecuredTestController.class
 com/ecommerce/config/MongoConfig.class
+com/ecommerce/controller/RegistrationController.class
 com/ecommerce/controller/OrderController.class
 com/ecommerce/service/UserService.class
 com/ecommerce/security/JwtTokenProvider.class
 com/ecommerce/controller/TestController.class
 com/ecommerce/service/ProductService.class
+com/ecommerce/controller/ProductController.class
 com/ecommerce/exception/ResourceNotFoundException.class
 com/ecommerce/dto/UserRegistrationRequest.class
+com/ecommerce/config/MongoDataInitializer.class
 com/ecommerce/model/User.class
 com/ecommerce/dto/UserDTO.class
 com/ecommerce/config/WebConfig.class
