@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+        .token-box {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>E-commerce API Test Page</h1>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="auth-tab">Authentication</div>
+        <div class="tab" data-tab="db-tab">Direct DB Testing</div>
+    </div>
+    
+    <div id="auth-tab" class="tab-content active">
+        <div class="card">
+            <h2>1. Create Test Business User</h2>
+            <p>This will create a test business user with username <strong>testbusiness</strong> and password <strong>password123</strong> or return token if user already exists.</p>
+            <button id="createTestUser">Create Test User & Get Token</button>
+            <p>Token:</p>
+            <div id="tokenOutput" class="token-box">No token yet</div>
+        </div>
+        
+        <div class="card">
+            <h2>2. Add Product</h2>
+            <p>Create a product using the token from step 1</p>
+            <form id="productForm">
+                <div>
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" value="Test Product" required>
+                </div>
+                <div>
+                    <label for="description">Description:</label>
+                    <input type="text" id="description" name="description" value="This is a test product">
+                </div>
+                <div>
+                    <label for="price">Price:</label>
+                    <input type="number" id="price" name="price" value="99.99" step="0.01" required>
+                </div>
+                <div>
+                    <label for="stock">Stock:</label>
+                    <input type="number" id="stock" name="stock" value="10" required>
+                </div>
+                <button type="submit">Add Product</button>
+            </form>
+            <p>Result:</p>
+            <textarea id="productResult" readonly></textarea>
+        </div>
+        
+        <div class="card">
+            <h2>3. View My Products</h2>
+            <button id="viewProducts">View My Products</button>
+            <p>Products:</p>
+            <textarea id="productsResult" readonly></textarea>
+        </div>
+    </div>
+    
+    <div id="db-tab" class="tab-content">
+        <div class="card">
+            <h2>Database Direct Testing</h2>
+            <p>Test database operations directly without authentication</p>
+            
+            <button id="checkProductCount">Check Product Count</button>
+            <button id="getAllProducts">Get All Products</button>
+            
+            <div>
+                <h3>Add Product Directly to Database</h3>
+                <form id="directProductForm">
+                    <div>
+                        <label for="directTitle">Title:</label>
+                        <input type="text" id="directTitle" name="title" value="Direct DB Product" required>
+                    </div>
+                    <div>
+                        <label for="directDescription">Description:</label>
+                        <input type="text" id="directDescription" name="description" value="This product was added directly to the database">
+                    </div>
+                    <div>
+                        <label for="directPrice">Price:</label>
+                        <input type="number" id="directPrice" name="price" value="199.99" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="directStock">Stock:</label>
+                        <input type="number" id="directStock" name="stock" value="20" required>
+                    </div>
+                    <button type="submit">Add Directly to DB</button>
+                </form>
+            </div>
+            
+            <p>Result:</p>
+            <textarea id="dbResult" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        // Tab navigation
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                const tabContentId = tab.getAttribute('data-tab');
+                document.getElementById(tabContentId).classList.add('active');
+            });
+        });
+
+        let token = '';
+        
+        // Create test user
+        document.getElementById('createTestUser').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/test/create-test-user', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                console.log('User created:', data);
+                
+                if (data.accessToken) {
+                    token = data.accessToken;
+                    document.getElementById('tokenOutput').textContent = token;
+                }
+            } catch (error) {
+                console.error('Error creating test user:', error);
+                document.getElementById('tokenOutput').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Add product
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!token) {
+                document.getElementById('productResult').value = 'Error: No token available. Create test user first.';
+                return;
+            }
+            
+            const productData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                price: parseFloat(document.getElementById('price').value),
+                stock: parseInt(document.getElementById('stock').value),
+                hidden: false,
+                currency: 'INR'
+            };
+            
+            try {
+                const response = await fetch('/api/business/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                const data = await response.json();
+                console.log('Product added:', data);
+                document.getElementById('productResult').value = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error adding product:', error);
+                document.getElementById('productResult').value = 'Error: ' + error.message;
+            }
+        });
+        
+        // View products
+        document.getElementById('viewProducts').addEventListener('click', async () => {
+            if (!token) {
+                document.getElementById('productsResult').value = 'Error: No token available. Create test user first.';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/business/products', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('Products:', data);
+                document.getElementById('productsResult').value = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error viewing products:', error);
+                document.getElementById('productsResult').value = 'Error: ' + error.message;
+            }
+        });
+        
+        // DB Testing: Check product count
+        document.getElementById('checkProductCount').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/test/db/products/count');
+                const data = await response.json();
+                document.getElementById('dbResult').value = 'Product count: ' + data.count;
+            } catch (error) {
+                console.error('Error checking product count:', error);
+                document.getElementById('dbResult').value = 'Error: ' + error.message;
+            }
+        });
+        
+        // DB Testing: Get all products
+        document.getElementById('getAllProducts').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/test/db/products');
+                const data = await response.json();
+                document.getElementById('dbResult').value = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error getting all products:', error);
+                document.getElementById('dbResult').value = 'Error: ' + error.message;
+            }
+        });
+        
+        // DB Testing: Add product directly
+        document.getElementById('directProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const productData = {
+                title: document.getElementById('directTitle').value,
+                description: document.getElementById('directDescription').value,
+                price: parseFloat(document.getElementById('directPrice').value),
+                stock: parseInt(document.getElementById('directStock').value)
+            };
+            
+            try {
+                const response = await fetch('/api/test/db/products/direct', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(productData)
+                });
+                
+                const data = await response.json();
+                console.log('Direct product added:', data);
+                document.getElementById('dbResult').value = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error adding product directly:', error);
+                document.getElementById('dbResult').value = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html> 

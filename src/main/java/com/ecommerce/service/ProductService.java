@@ -1,8 +1,10 @@
 package com.ecommerce.service;
 
+import com.ecommerce.model.Brand;
 import com.ecommerce.model.BusinessDetails;
 import com.ecommerce.model.Category;
 import com.ecommerce.model.Product;
+import com.ecommerce.repository.BrandRepository;
 import com.ecommerce.repository.BusinessDetailsRepository;
 import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.repository.ProductRepository;
@@ -26,6 +28,9 @@ public class ProductService {
     
     @Autowired
     private CategoryRepository categoryRepository;
+    
+    @Autowired
+    private BrandRepository brandRepository;
     
     public List<Product> findAllProducts() {
         return productRepository.findAll();
@@ -80,6 +85,24 @@ public class ProductService {
         product.setBusiness(business);
         product.setCategory(category);
         
+        // Handle brand relationship
+        if (product.getBrandName() != null && !product.getBrandName().isEmpty()) {
+            // Check if a brand with this name exists for this business
+            Optional<Brand> existingBrand = brandRepository.findByNameAndBusinessId(product.getBrandName(), businessId);
+            
+            if (existingBrand.isPresent()) {
+                // Use existing brand
+                product.setBrand(existingBrand.get());
+            } else {
+                // Create a new brand
+                Brand newBrand = new Brand();
+                newBrand.setName(product.getBrandName());
+                newBrand.setBusiness(business);
+                Brand savedBrand = brandRepository.save(newBrand);
+                product.setBrand(savedBrand);
+            }
+        }
+        
         // Ensure required fields are set
         if (product.getTitle() == null || product.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Product title cannot be empty");
@@ -117,7 +140,8 @@ public class ProductService {
                           ", price: " + product.getPrice() + 
                           ", finalPrice: " + product.getFinalPrice() + 
                           ", hidden: " + product.getHidden() +
-                          ", business: " + business.getBusinessName());
+                          ", business: " + business.getBusinessName() +
+                          ", brand: " + (product.getBrand() != null ? product.getBrand().getName() : product.getBrandName()));
         
         try {
             Product savedProduct = productRepository.save(product);
@@ -164,6 +188,33 @@ public class ProductService {
             product.setCategory(productDetails.getCategory());
         }
         
+        // Update brand
+        if (productDetails.getBrandName() != null) {
+            // First save the brandName field
+            product.setBrandName(productDetails.getBrandName());
+            
+            // If not empty, try to find or create the Brand entity
+            if (!productDetails.getBrandName().isEmpty()) {
+                BusinessDetails business = product.getBusiness();
+                Optional<Brand> existingBrand = brandRepository.findByNameAndBusinessId(
+                    productDetails.getBrandName(), business.getId());
+                
+                if (existingBrand.isPresent()) {
+                    product.setBrand(existingBrand.get());
+                } else {
+                    // Create a new brand
+                    Brand newBrand = new Brand();
+                    newBrand.setName(productDetails.getBrandName());
+                    newBrand.setBusiness(business);
+                    Brand savedBrand = brandRepository.save(newBrand);
+                    product.setBrand(savedBrand);
+                }
+            } else {
+                // If brand name is empty, remove brand association
+                product.setBrand(null);
+            }
+        }
+        
         // Preserve the hidden status unless explicitly changed
         if (productDetails.getHidden() != null) {
             product.setHidden(productDetails.getHidden());
@@ -180,7 +231,8 @@ public class ProductService {
                            ", title: " + product.getTitle() + 
                            ", price: " + product.getPrice() + 
                            ", finalPrice: " + product.getFinalPrice() + 
-                           ", hidden: " + product.getHidden());
+                           ", hidden: " + product.getHidden() +
+                           ", brand: " + (product.getBrand() != null ? product.getBrand().getName() : product.getBrandName()));
         
         return saveProduct(product);
     }

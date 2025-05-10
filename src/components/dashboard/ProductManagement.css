@@ -416,4 +416,16 @@
   .form-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Add these styles for brand name functionality */
+
+.brand-badge {
+  display: inline-block;
+  background-color: #e1f5fe;
+  color: #01579b;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.85rem;
+  margin-left: 5px;
 } 

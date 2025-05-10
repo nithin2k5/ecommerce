@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { FaSearch, FaEdit, FaTrash, FaPlus, FaPercent, FaEye, FaEyeSlash } from 'react-icons/fa';
 import './ProductManagement.css';
 import { productApi, categoryApi } from '../../services/product.service';
+import { brandApi } from '../../services/brand.service';
 import { toast } from 'react-toastify';
 
 const ProductManagement = ({ businessId }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -20,14 +22,16 @@ const ProductManagement = ({ businessId }) => {
     price: '',
     categoryId: '',
     imageUrls: [''],
-    stock: ''
+    stock: '',
+    brandName: ''
   });
   const [discount, setDiscount] = useState('');
 
-  // Fetch products when component mounts
+  // Fetch products, categories and brands when component mounts
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchBrands();
   }, [businessId]);
 
   // Fetch products from the API
@@ -57,6 +61,17 @@ const ProductManagement = ({ businessId }) => {
     }
   };
 
+  // Fetch brands from the API
+  const fetchBrands = async () => {
+    try {
+      const response = await brandApi.getBrandsByBusiness(businessId);
+      setBrands(response);
+    } catch (err) {
+      console.error('Error fetching brands:', err);
+      toast.error('Failed to load brands');
+    }
+  };
+
   // Handle search by ID
   const handleSearch = async () => {
     if (!searchId) return;
@@ -82,7 +97,8 @@ const ProductManagement = ({ businessId }) => {
       price: '',
       categoryId: '',
       imageUrls: [''],
-      stock: ''
+      stock: '',
+      brandName: ''
     });
     setShowModal(true);
   };
@@ -97,7 +113,8 @@ const ProductManagement = ({ businessId }) => {
       price: product.price,
       categoryId: product.category ? product.category.id : '',
       imageUrls: product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [''],
-      stock: product.stock
+      stock: product.stock,
+      brandName: product.brandName || ''
     });
     setShowModal(true);
   };
@@ -175,7 +192,8 @@ const ProductManagement = ({ businessId }) => {
           description: formData.description,
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock),
-          imageUrls: formData.imageUrls.filter(url => url.trim() !== '')
+          imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
+          brandName: formData.brandName
         };
         
         const newProduct = await productApi.createProduct(
@@ -194,7 +212,8 @@ const ProductManagement = ({ businessId }) => {
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock),
           imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
-          category: formData.categoryId ? { id: formData.categoryId } : null
+          category: formData.categoryId ? { id: formData.categoryId } : null,
+          brandName: formData.brandName
         };
         
         const updatedProduct = await productApi.updateProduct(selectedProduct.id, productData);
@@ -257,6 +276,37 @@ const ProductManagement = ({ businessId }) => {
     }
   };
 
+  // Helper function to display brand name, prioritizing the product's own brandName field
+  const displayBrandName = (product) => {
+    if (product.brandName) {
+      return product.brandName;
+    } else if (product.business && product.business.brandName) {
+      return product.business.brandName;
+    } else if (product.business && product.business.businessName) {
+      return product.business.businessName;
+    }
+    return '—';
+  };
+
+  // Handle adding a new brand if needed
+  const handleAddBrand = async (brandName) => {
+    if (!brandName) return null;
+    
+    try {
+      const newBrand = await brandApi.createBrand({
+        name: brandName
+      }, businessId);
+      
+      // Add the new brand to the list
+      setBrands([...brands, newBrand]);
+      return newBrand;
+    } catch (err) {
+      console.error('Error creating brand:', err);
+      toast.error('Failed to create brand');
+      return null;
+    }
+  };
+
   return (
     <div className="product-management">
       <div className="section-header">
@@ -315,7 +365,7 @@ const ProductManagement = ({ businessId }) => {
                     )}
                   </td>
                   <td>{product.title}</td>
-                  <td>{product.brandName || '—'}</td>
+                  <td>{displayBrandName(product)}</td>
                   <td>{product.category ? product.category.name : '—'}</td>
                   <td>₹{product.price.toFixed(2)}</td>
                   <td>
@@ -387,7 +437,7 @@ const ProductManagement = ({ businessId }) => {
               <p><strong>ID:</strong> {selectedProduct.id}</p>
               <p><strong>Title:</strong> {selectedProduct.title}</p>
               <p><strong>Description:</strong> {selectedProduct.description}</p>
-              <p><strong>Brand:</strong> {selectedProduct.brandName || 'Not available'}</p>
+              <p><strong>Brand:</strong> {displayBrandName(selectedProduct)}</p>
               <p><strong>Category:</strong> {selectedProduct.category ? selectedProduct.category.name : 'None'}</p>
               <p><strong>Original Price:</strong> ₹{selectedProduct.price.toFixed(2)}</p>
               <p><strong>Discount:</strong> {selectedProduct.discountPercentage}%</p>
@@ -479,17 +529,37 @@ const ProductManagement = ({ businessId }) => {
                     </div>
                   </div>
                   
-                  <div className="form-group">
-                    <label htmlFor="stock">Stock Quantity</label>
-                    <input
-                      type="number"
-                      id="stock"
-                      name="stock"
-                      min="0"
-                      value={formData.stock}
-                      onChange={handleInputChange}
-                      required
-                    />
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="stock">Stock Quantity</label>
+                      <input
+                        type="number"
+                        id="stock"
+                        name="stock"
+                        min="0"
+                        value={formData.stock}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="brandName">Brand Name</label>
+                      <input
+                        type="text"
+                        id="brandName"
+                        name="brandName"
+                        value={formData.brandName}
+                        onChange={handleInputChange}
+                        placeholder="Enter brand name"
+                        list="brandOptions"
+                      />
+                      <datalist id="brandOptions">
+                        {brands.map(brand => (
+                          <option key={brand.id} value={brand.name} />
+                        ))}
+                      </datalist>
+                    </div>
                   </div>
                   
                   <div className="form-group">

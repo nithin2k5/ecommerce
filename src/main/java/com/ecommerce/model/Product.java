@@ -35,6 +35,16 @@ public class Product {
     @Column(name = "hidden")
     private Boolean hidden = false;
     
+    @Column(name = "currency")
+    private String currency = "INR";
+    
+    @Column(name = "brand_name")
+    private String brandName;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "brand_id")
+    private Brand brand;
+    
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
     private Category category;
@@ -55,8 +65,22 @@ public class Product {
     private LocalDateTime updatedAt;
     
     @Transient
-    public String getBrandName() {
+    public String getBusinessBrandName() {
         return business != null ? business.getBusinessName() : null;
+    }
+    
+    @Transient
+    public String getEffectiveBrandName() {
+        if (brandName != null && !brandName.isEmpty()) {
+            return brandName;
+        } else if (brand != null) {
+            return brand.getName();
+        } else if (business != null && business.getBrandName() != null) {
+            return business.getBrandName();
+        } else if (business != null) {
+            return business.getBusinessName();
+        }
+        return null;
     }
     
     @PrePersist
@@ -72,8 +96,10 @@ public class Product {
     }
     
     private void calculateFinalPrice() {
-        if (this.price != null && this.discountPercentage != null) {
-            this.finalPrice = this.price * (1 - this.discountPercentage / 100);
+        if (price != null && discountPercentage != null) {
+            finalPrice = price * (1 - discountPercentage / 100);
+        } else if (price != null) {
+            finalPrice = price;
         }
     }
     
@@ -181,5 +207,29 @@ public class Product {
     
     public void setHidden(Boolean hidden) {
         this.hidden = hidden;
+    }
+    
+    public String getCurrency() {
+        return currency;
+    }
+    
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+    
+    public Brand getBrand() {
+        return brand;
+    }
+    
+    public void setBrand(Brand brand) {
+        this.brand = brand;
+    }
+    
+    public String getBrandName() {
+        return brandName;
+    }
+    
+    public void setBrandName(String brandName) {
+        this.brandName = brandName;
     }
 } 
