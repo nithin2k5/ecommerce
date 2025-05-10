@@ -25,6 +25,7 @@ const Header = () => {
   useEffect(() => {
     // Check if user is authenticated from Redux or localStorage
     const token = localStorage.getItem('token');
+    const businessToken = localStorage.getItem('businessToken');
     const storedUser = localStorage.getItem('user');
     
     try {
@@ -35,26 +36,27 @@ const Header = () => {
       setLocalUser(parsedUser || user);
       
       // Set authentication status
-      const isAuth = isAuthenticated || !!token;
+      const isAuth = isAuthenticated || !!token || !!businessToken;
       setUserAuthenticated(isAuth);
       
       console.log('Header Auth Status:', { 
         reduxAuth: isAuthenticated, 
         reduxUser: user,
         localStorageToken: !!token,
+        businessToken: !!businessToken,
         localStorageUser: parsedUser,
         effectiveUser: parsedUser || user,
         isAuthenticated: isAuth
       });
       
       // If we have a token but no Redux user, sync Redux with localStorage
-      if (token && !isAuthenticated && parsedUser) {
+      if ((token || businessToken) && !isAuthenticated && parsedUser) {
         dispatch({
           type: 'LOGIN_SUCCESS',
           payload: {
             username: parsedUser.username,
             roles: parsedUser.roles,
-            token: token
+            token: token || businessToken
           }
         });
         console.log('Synchronized Redux state with localStorage');
@@ -90,6 +92,11 @@ const Header = () => {
 
   // Get the effective user (either from Redux or localStorage)
   const effectiveUser = user || localUser;
+  
+  // Check if the user has business role
+  const isBusinessUser = effectiveUser?.roles?.some(role => 
+    role === 'ROLE_BUSINESS' || role === 'BUSINESS_ADMIN' || role === 'ROLE_ADMIN'
+  );
 
   return (
     <header className="header">
@@ -111,15 +118,29 @@ const Header = () => {
         </div>
 
         <nav className="nav-links">
-          <Link to="/orders" className="nav-link">
-            <FaBox />
-            <span>Orders</span>
-          </Link>
+          {/* Only show Orders link for regular users, not business users */}
+          {userAuthenticated && !isBusinessUser && (
+            <Link to="/orders" className="nav-link">
+              <FaBox />
+              <span>Orders</span>
+            </Link>
+          )}
           
-          <Link to="/cart" className="cart-link">
-            <FaShoppingCart />
-            <span>Cart ({cartItemsCount})</span>
-          </Link>
+          {/* Only show Cart for regular users, not business users */}
+          {!isBusinessUser && (
+            <Link to="/cart" className="cart-link">
+              <FaShoppingCart />
+              <span>Cart ({cartItemsCount})</span>
+            </Link>
+          )}
+          
+          {/* Business dashboard link for business users */}
+          {userAuthenticated && isBusinessUser && (
+            <Link to="/business/dashboard" className="nav-link">
+              <FaUser />
+              <span>Dashboard</span>
+            </Link>
+          )}
           
           {userAuthenticated && effectiveUser ? (
             <div className="user-menu">
@@ -134,6 +155,11 @@ const Header = () => {
                   <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                     My Profile
                   </Link>
+                  {isBusinessUser && (
+                    <Link to="/business/dashboard" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      Business Dashboard
+                    </Link>
+                  )}
                   <div className="dropdown-divider"></div>
                   <button onClick={handleLogout} className="dropdown-item logout-btn">
                     <FaSignOutAlt className="logout-icon" />

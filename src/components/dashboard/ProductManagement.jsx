@@ -1,72 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaEdit, FaTrash, FaPlus, FaPercent } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrash, FaPlus, FaPercent, FaEye, FaEyeSlash } from 'react-icons/fa';
 import './ProductManagement.css';
+import { productApi, categoryApi } from '../../services/product.service';
+import { toast } from 'react-toastify';
 
-const ProductManagement = () => {
-  // Mock data for products
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      title: 'iPhone 13 Pro',
-      description: 'The latest iPhone with A15 Bionic chip',
-      price: 999.99,
-      discountPercentage: 5,
-      finalPrice: 949.99,
-      category: 'Electronics',
-      imageUrls: ['https://example.com/iphone13.jpg'],
-      stock: 50,
-      createdAt: '2023-05-10T10:30:00Z'
-    },
-    {
-      id: 2,
-      title: 'Samsung Galaxy S22',
-      description: 'Flagship Android smartphone with 8K video',
-      price: 899.99,
-      discountPercentage: 0,
-      finalPrice: 899.99,
-      category: 'Electronics',
-      imageUrls: ['https://example.com/galaxy.jpg'],
-      stock: 30,
-      createdAt: '2023-05-12T09:15:00Z'
-    },
-    {
-      id: 3,
-      title: 'Sony WH-1000XM4',
-      description: 'Wireless noise cancelling headphones',
-      price: 349.99,
-      discountPercentage: 10,
-      finalPrice: 314.99,
-      category: 'Electronics',
-      imageUrls: ['https://example.com/sony.jpg'],
-      stock: 25,
-      createdAt: '2023-05-15T14:45:00Z'
-    },
-    {
-      id: 4,
-      title: 'MacBook Pro 16"',
-      description: 'Apple M1 Pro chip, 16GB RAM, 512GB SSD',
-      price: 2499.99,
-      discountPercentage: 0,
-      finalPrice: 2499.99,
-      category: 'Computers',
-      imageUrls: ['https://example.com/macbook.jpg'],
-      stock: 15,
-      createdAt: '2023-05-18T11:20:00Z'
-    },
-    {
-      id: 5,
-      title: 'Nike Air Max 270',
-      description: 'Men\'s running shoes',
-      price: 150.00,
-      discountPercentage: 15,
-      finalPrice: 127.50,
-      category: 'Fashion',
-      imageUrls: ['https://example.com/nike.jpg'],
-      stock: 45,
-      createdAt: '2023-05-20T16:10:00Z'
-    }
-  ]);
-
+const ProductManagement = ({ businessId }) => {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'discount'
   const [searchId, setSearchId] = useState('');
@@ -75,21 +18,58 @@ const ProductManagement = () => {
     title: '',
     description: '',
     price: '',
-    category: '',
+    categoryId: '',
     imageUrls: [''],
     stock: ''
   });
   const [discount, setDiscount] = useState('');
 
+  // Fetch products when component mounts
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [businessId]);
+
+  // Fetch products from the API
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await productApi.getProductsByBusiness(businessId);
+      setProducts(response);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Failed to load products. Please try again later.');
+      toast.error('Failed to load products');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch categories from the API
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryApi.getAllCategories();
+      setCategories(response);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      toast.error('Failed to load categories');
+    }
+  };
+
   // Handle search by ID
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchId) return;
     
-    const product = products.find(p => p.id === parseInt(searchId));
-    if (product) {
+    setIsLoading(true);
+    try {
+      const product = await productApi.getProductById(searchId);
       setSelectedProduct(product);
-    } else {
-      alert('Product not found');
+    } catch (err) {
+      console.error('Error searching for product:', err);
+      toast.error('Product not found');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -100,7 +80,7 @@ const ProductManagement = () => {
       title: '',
       description: '',
       price: '',
-      category: '',
+      categoryId: '',
       imageUrls: [''],
       stock: ''
     });
@@ -115,8 +95,8 @@ const ProductManagement = () => {
       title: product.title,
       description: product.description,
       price: product.price,
-      category: product.category,
-      imageUrls: product.imageUrls,
+      categoryId: product.category ? product.category.id : '',
+      imageUrls: product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [''],
       stock: product.stock
     });
     setShowModal(true);
@@ -131,9 +111,22 @@ const ProductManagement = () => {
   };
 
   // Handle deleting a product
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
-      setProducts(products.filter(product => product.id !== id));
+      setIsLoading(true);
+      try {
+        await productApi.deleteProduct(id);
+        setProducts(products.filter(product => product.id !== id));
+        toast.success('Product deleted successfully');
+        if (selectedProduct && selectedProduct.id === id) {
+          setSelectedProduct(null);
+        }
+      } catch (err) {
+        console.error('Error deleting product:', err);
+        toast.error('Failed to delete product');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -170,65 +163,98 @@ const ProductManagement = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (modalMode === 'add') {
-      // Add new product
-      const newProduct = {
-        id: Math.max(...products.map(p => p.id)) + 1,
-        title: formData.title,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        discountPercentage: 0,
-        finalPrice: parseFloat(formData.price),
-        category: formData.category,
-        imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
-        stock: parseInt(formData.stock),
-        createdAt: new Date().toISOString()
-      };
+    setIsLoading(true);
+    try {
+      if (modalMode === 'add') {
+        // Add new product
+        const productData = {
+          title: formData.title,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          imageUrls: formData.imageUrls.filter(url => url.trim() !== '')
+        };
+        
+        const newProduct = await productApi.createProduct(
+          productData, 
+          businessId, 
+          formData.categoryId || null
+        );
+        
+        setProducts([...products, newProduct]);
+        toast.success('Product added successfully');
+      } else if (modalMode === 'edit') {
+        // Update existing product
+        const productData = {
+          title: formData.title,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          stock: parseInt(formData.stock),
+          imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
+          category: formData.categoryId ? { id: formData.categoryId } : null
+        };
+        
+        const updatedProduct = await productApi.updateProduct(selectedProduct.id, productData);
+        
+        setProducts(products.map(product => 
+          product.id === selectedProduct.id ? updatedProduct : product
+        ));
+        
+        if (selectedProduct) {
+          setSelectedProduct(updatedProduct);
+        }
+        
+        toast.success('Product updated successfully');
+      } else if (modalMode === 'discount') {
+        // Update product discount
+        const discountValue = parseFloat(discount);
+        const updatedProduct = await productApi.updateProductDiscount(selectedProduct.id, discountValue);
+        
+        setProducts(products.map(product => 
+          product.id === selectedProduct.id ? updatedProduct : product
+        ));
+        
+        if (selectedProduct) {
+          setSelectedProduct(updatedProduct);
+        }
+        
+        toast.success('Discount applied successfully');
+      }
       
-      setProducts([...products, newProduct]);
-    } else if (modalMode === 'edit') {
-      // Update existing product
-      setProducts(products.map(product => {
-        if (product.id === selectedProduct.id) {
-          const updatedProduct = {
-            ...product,
-            title: formData.title,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            category: formData.category,
-            imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
-            stock: parseInt(formData.stock)
-          };
-          
-          // Recalculate final price
-          updatedProduct.finalPrice = updatedProduct.price * (1 - updatedProduct.discountPercentage / 100);
-          
-          return updatedProduct;
-        }
-        return product;
-      }));
-    } else if (modalMode === 'discount') {
-      // Update product discount
-      setProducts(products.map(product => {
-        if (product.id === selectedProduct.id) {
-          const discountPercentage = parseFloat(discount);
-          const finalPrice = product.price * (1 - discountPercentage / 100);
-          
-          return {
-            ...product,
-            discountPercentage,
-            finalPrice
-          };
-        }
-        return product;
-      }));
+      setShowModal(false);
+    } catch (err) {
+      console.error('Error saving product:', err);
+      toast.error(err.message || 'Failed to save product');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setShowModal(false);
-    setSelectedProduct(null);
+  };
+
+  // Handle toggling product visibility
+  const handleToggleVisibility = async (product) => {
+    setIsLoading(true);
+    try {
+      const newHiddenStatus = !product.hidden;
+      const updatedProduct = await productApi.toggleProductVisibility(product.id, newHiddenStatus);
+      
+      setProducts(products.map(p => 
+        p.id === product.id ? updatedProduct : p
+      ));
+      
+      if (selectedProduct && selectedProduct.id === product.id) {
+        setSelectedProduct(updatedProduct);
+      }
+      
+      toast.success(`Product ${newHiddenStatus ? 'hidden' : 'visible'} successfully`);
+    } catch (err) {
+      console.error('Error toggling product visibility:', err);
+      toast.error('Failed to update product visibility');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -243,84 +269,104 @@ const ProductManagement = () => {
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
             />
-            <button onClick={handleSearch}><FaSearch /></button>
+            <button onClick={handleSearch} disabled={isLoading}><FaSearch /></button>
           </div>
-          <button className="add-product-btn" onClick={handleAddNew}>
+          <button className="add-product-btn" onClick={handleAddNew} disabled={isLoading}>
             <FaPlus /> Add Product
           </button>
         </div>
       </div>
 
+      {error && <div className="error-message">{error}</div>}
+
       {/* Product Table */}
       <div className="product-table-container">
-        <table className="product-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Image</th>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Discount</th>
-              <th>Final Price</th>
-              <th>Stock</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map(product => (
-              <tr key={product.id}>
-                <td>{product.id}</td>
-                <td>
-                  {product.imageUrls && product.imageUrls.length > 0 ? (
-                    <div className="product-thumbnail">
-                      <img src={product.imageUrls[0]} alt={product.title} />
-                    </div>
-                  ) : (
-                    <div className="product-thumbnail no-image">No Image</div>
-                  )}
-                </td>
-                <td>{product.title}</td>
-                <td>{product.category}</td>
-                <td>${product.price.toFixed(2)}</td>
-                <td>
-                  {product.discountPercentage > 0 ? (
-                    <span className="discount-badge">{product.discountPercentage}%</span>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td>${product.finalPrice.toFixed(2)}</td>
-                <td>{product.stock}</td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="edit-btn" 
-                      title="Edit Product"
-                      onClick={() => handleEdit(product)}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button 
-                      className="discount-btn" 
-                      title="Add Discount"
-                      onClick={() => handleDiscount(product)}
-                    >
-                      <FaPercent />
-                    </button>
-                    <button 
-                      className="delete-btn" 
-                      title="Delete Product"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                </td>
+        {isLoading ? (
+          <div className="loading">Loading products...</div>
+        ) : products.length === 0 ? (
+          <div className="no-products">No products found. Add a new product to get started.</div>
+        ) : (
+          <table className="product-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Image</th>
+                <th>Title</th>
+                <th>Brand</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Discount</th>
+                <th>Final Price</th>
+                <th>Stock</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.map(product => (
+                <tr key={product.id}>
+                  <td>{product.id}</td>
+                  <td>
+                    {product.imageUrls && product.imageUrls.length > 0 ? (
+                      <div className="product-thumbnail">
+                        <img src={product.imageUrls[0]} alt={product.title} />
+                      </div>
+                    ) : (
+                      <div className="product-thumbnail no-image">No Image</div>
+                    )}
+                  </td>
+                  <td>{product.title}</td>
+                  <td>{product.brandName || '—'}</td>
+                  <td>{product.category ? product.category.name : '—'}</td>
+                  <td>₹{product.price.toFixed(2)}</td>
+                  <td>
+                    {product.discountPercentage > 0 ? (
+                      <span className="discount-badge">{product.discountPercentage}%</span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>₹{product.finalPrice.toFixed(2)}</td>
+                  <td>{product.stock}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="edit-btn" 
+                        title="Edit Product"
+                        onClick={() => handleEdit(product)}
+                        disabled={isLoading}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button 
+                        className="discount-btn" 
+                        title="Add Discount"
+                        onClick={() => handleDiscount(product)}
+                        disabled={isLoading}
+                      >
+                        <FaPercent />
+                      </button>
+                      <button 
+                        className="delete-btn" 
+                        title="Delete Product"
+                        onClick={() => handleDelete(product.id)}
+                        disabled={isLoading}
+                      >
+                        <FaTrash />
+                      </button>
+                      <button 
+                        className="visibility-btn"
+                        onClick={() => handleToggleVisibility(product)}
+                        title={product.hidden ? "Show product" : "Hide product"}
+                      >
+                        {product.hidden ? <FaEye /> : <FaEyeSlash />}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Selected Product Detail */}
@@ -329,25 +375,33 @@ const ProductManagement = () => {
           <h3>Product Details: {selectedProduct.title}</h3>
           <div className="detail-grid">
             <div className="detail-images">
-              {selectedProduct.imageUrls.map((url, index) => (
-                <img key={index} src={url} alt={`${selectedProduct.title} - ${index}`} />
-              ))}
+              {selectedProduct.imageUrls && selectedProduct.imageUrls.length > 0 ? (
+                selectedProduct.imageUrls.map((url, index) => (
+                  <img key={index} src={url} alt={`${selectedProduct.title} - ${index}`} />
+                ))
+              ) : (
+                <div className="no-image">No Images</div>
+              )}
             </div>
             <div className="detail-info">
               <p><strong>ID:</strong> {selectedProduct.id}</p>
               <p><strong>Title:</strong> {selectedProduct.title}</p>
               <p><strong>Description:</strong> {selectedProduct.description}</p>
-              <p><strong>Category:</strong> {selectedProduct.category}</p>
-              <p><strong>Original Price:</strong> ${selectedProduct.price.toFixed(2)}</p>
+              <p><strong>Brand:</strong> {selectedProduct.brandName || 'Not available'}</p>
+              <p><strong>Category:</strong> {selectedProduct.category ? selectedProduct.category.name : 'None'}</p>
+              <p><strong>Original Price:</strong> ₹{selectedProduct.price.toFixed(2)}</p>
               <p><strong>Discount:</strong> {selectedProduct.discountPercentage}%</p>
-              <p><strong>Final Price:</strong> ${selectedProduct.finalPrice.toFixed(2)}</p>
+              <p><strong>Final Price:</strong> ₹{selectedProduct.finalPrice.toFixed(2)}</p>
               <p><strong>Stock:</strong> {selectedProduct.stock} units</p>
               <p><strong>Created:</strong> {new Date(selectedProduct.createdAt).toLocaleDateString()}</p>
+              {selectedProduct.updatedAt && (
+                <p><strong>Last Updated:</strong> {new Date(selectedProduct.updatedAt).toLocaleDateString()}</p>
+              )}
               
               <div className="detail-actions">
-                <button onClick={() => handleEdit(selectedProduct)}>Edit</button>
-                <button onClick={() => handleDiscount(selectedProduct)}>Update Discount</button>
-                <button onClick={() => handleDelete(selectedProduct.id)}>Delete</button>
+                <button onClick={() => handleEdit(selectedProduct)} disabled={isLoading}>Edit</button>
+                <button onClick={() => handleDiscount(selectedProduct)} disabled={isLoading}>Update Discount</button>
+                <button onClick={() => handleDelete(selectedProduct.id)} disabled={isLoading}>Delete</button>
                 <button onClick={() => setSelectedProduct(null)}>Close</button>
               </div>
             </div>
@@ -394,7 +448,7 @@ const ProductManagement = () => {
                   
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="price">Price ($)</label>
+                      <label htmlFor="price">Price (₹)</label>
                       <input
                         type="number"
                         id="price"
@@ -408,15 +462,20 @@ const ProductManagement = () => {
                     </div>
                     
                     <div className="form-group">
-                      <label htmlFor="category">Category</label>
-                      <input
-                        type="text"
-                        id="category"
-                        name="category"
-                        value={formData.category}
+                      <label htmlFor="categoryId">Category</label>
+                      <select
+                        id="categoryId"
+                        name="categoryId"
+                        value={formData.categoryId}
                         onChange={handleInputChange}
-                        required
-                      />
+                      >
+                        <option value="">No Category</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   
@@ -472,23 +531,24 @@ const ProductManagement = () => {
                   />
                   {selectedProduct && (
                     <div className="discount-preview">
-                      <p>Original Price: ${selectedProduct.price.toFixed(2)}</p>
+                      <p>Original Price: ₹{selectedProduct.price.toFixed(2)}</p>
                       <p>
-                        Final Price: ${(selectedProduct.price * (1 - parseFloat(discount || 0) / 100)).toFixed(2)}
+                        Final Price: ₹{(selectedProduct.price * (1 - parseFloat(discount || 0) / 100)).toFixed(2)}
                       </p>
-                      <p>Savings: ${(selectedProduct.price * parseFloat(discount || 0) / 100).toFixed(2)}</p>
+                      <p>Savings: ₹{(selectedProduct.price * parseFloat(discount || 0) / 100).toFixed(2)}</p>
                     </div>
                   )}
                 </div>
               )}
               
               <div className="modal-actions">
-                <button type="submit">
-                  {modalMode === 'add' ? 'Add Product' : 
+                <button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Processing...' : 
+                   modalMode === 'add' ? 'Add Product' : 
                    modalMode === 'edit' ? 'Update Product' : 
                    'Apply Discount'}
                 </button>
-                <button type="button" onClick={() => setShowModal(false)}>
+                <button type="button" onClick={() => setShowModal(false)} disabled={isLoading}>
                   Cancel
                 </button>
               </div>
@@ -500,4 +560,4 @@ const ProductManagement = () => {
   );
 };
 
-export default ProductManagement; 
+export default ProductManagement;

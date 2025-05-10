@@ -250,4 +250,40 @@
   .form-group {
     flex: 1 1 100%;
   }
+}
+
+/* Permanent field styling */
+.brand-name-group {
+  flex: 1 1 100%;
+}
+
+.permanent-field-notice {
+  display: inline-block;
+  background-color: #ff5722;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.permanent-field {
+  border: 1px solid #ff9800 !important;
+  background-color: #fff9e6 !important;
+}
+
+.permanent-field:focus {
+  border-color: #ff5722 !important;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1) !important;
+}
+
+.field-description {
+  display: block;
+  margin-top: 6px;
+  color: #6c757d;
+  font-size: 13px;
+  font-style: italic;
 } 

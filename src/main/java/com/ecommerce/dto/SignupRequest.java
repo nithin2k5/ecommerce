@@ -27,6 +27,8 @@ public class SignupRequest {
     
     private String businessName;
     
+    private String brandName;
+    
     private String registrationCode;
 
     // Customer details fields
@@ -83,6 +85,14 @@ public class SignupRequest {
     
     public void setBusinessName(String businessName) {
         this.businessName = businessName;
+    }
+    
+    public String getBrandName() {
+        return brandName;
+    }
+    
+    public void setBrandName(String brandName) {
+        this.brandName = brandName;
     }
     
     public String getRegistrationCode() {

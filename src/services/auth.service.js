@@ -148,7 +148,7 @@ class AuthService {
       });
   }
 
-  registerBusiness(username, email, password, fullName, businessName, registrationCode) {
+  registerBusiness(username, email, password, fullName, businessName, brandName, registrationCode) {
     // Use mock data if server is unavailable and in development mode
     if (useMockData && process.env.NODE_ENV === 'development') {
       console.log('Using mock business registration');
@@ -165,6 +165,7 @@ class AuthService {
         password,
         fullName,
         businessName,
+        brandName,
         registrationCode
       })
       .then(response => {
@@ -178,7 +179,7 @@ class AuthService {
           if (process.env.NODE_ENV === 'development') {
             // Auto fallback to mock mode in development
             this.enableMockMode();
-            return this.registerBusiness(username, email, password, fullName, businessName, registrationCode);
+            return this.registerBusiness(username, email, password, fullName, businessName, brandName, registrationCode);
           } else {
             throw new Error('Unable to connect to authentication server. Please try again later.');
           }

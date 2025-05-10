@@ -4,8 +4,10 @@ import com.ecommerce.dto.JwtResponse;
 import com.ecommerce.dto.LoginRequest;
 import com.ecommerce.dto.MessageResponse;
 import com.ecommerce.dto.SignupRequest;
+import com.ecommerce.model.BusinessDetails;
 import com.ecommerce.model.CustomerDetails;
 import com.ecommerce.model.User;
+import com.ecommerce.repository.BusinessDetailsRepository;
 import com.ecommerce.repository.CustomerDetailsRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.security.JwtUtils;
@@ -43,6 +45,9 @@ public class AuthController {
     
     @Autowired
     CustomerDetailsRepository customerDetailsRepository;
+
+    @Autowired
+    BusinessDetailsRepository businessDetailsRepository;
 
     @Autowired
     PasswordEncoder encoder;
@@ -167,6 +172,13 @@ public class AuthController {
                     .badRequest()
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
+        
+        // Validate that brand name is provided
+        if (signUpRequest.getBrandName() == null || signUpRequest.getBrandName().trim().isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Brand name is required and cannot be empty"));
+        }
 
         try {
             // Create new business user
@@ -181,7 +193,16 @@ public class AuthController {
             roles.add("ROLE_BUSINESS");
             user.setRoles(roles);
             
-            userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            
+            // Create and save business details
+            BusinessDetails businessDetails = new BusinessDetails();
+            businessDetails.setUser(savedUser);
+            businessDetails.setBusinessName(signUpRequest.getBusinessName());
+            businessDetails.setBrandName(signUpRequest.getBrandName()); // Set brand name
+            businessDetails.setPhone(signUpRequest.getPhone());
+            
+            businessDetailsRepository.save(businessDetails);
     
             return ResponseEntity.ok(new MessageResponse("Business account registered successfully!"));
         } catch (Exception e) {

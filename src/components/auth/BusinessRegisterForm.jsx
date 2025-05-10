@@ -14,6 +14,7 @@ const BusinessRegisterForm = () => {
     confirmPassword: '',
     fullName: '',
     businessName: '',
+    brandName: '',
     businessType: '',
     phoneNumber: '',
     registrationCode: 'BUSINESS_SECRET_CODE' // Pre-filled with the correct code from application.properties
@@ -83,6 +84,11 @@ const BusinessRegisterForm = () => {
       newErrors.businessName = 'Business name is required';
     }
     
+    // Validate brand name
+    if (!formData.brandName) {
+      newErrors.brandName = 'Brand name is required';
+    }
+    
     // Validate business type
     if (!formData.businessType) {
       newErrors.businessType = 'Please select a business type';
@@ -132,6 +138,7 @@ const BusinessRegisterForm = () => {
         formData.password,
         formData.fullName,
         formData.businessName,
+        formData.brandName,
         formData.registrationCode
       );
       
@@ -145,6 +152,7 @@ const BusinessRegisterForm = () => {
         confirmPassword: '',
         fullName: '',
         businessName: '',
+        brandName: '',
         businessType: '',
         phoneNumber: '',
         registrationCode: 'BUSINESS_SECRET_CODE'
@@ -352,6 +360,24 @@ const BusinessRegisterForm = () => {
                   <option value="other">Other</option>
                 </select>
                 {errors.businessType && <div className="field-error">{errors.businessType}</div>}
+              </div>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group brand-name-group">
+                <label htmlFor="brandName">Brand Name* <span className="permanent-field-notice">Cannot be changed later</span></label>
+                <input
+                  type="text"
+                  id="brandName"
+                  name="brandName"
+                  value={formData.brandName}
+                  onChange={handleChange}
+                  placeholder="Your brand name"
+                  disabled={loading}
+                  className="permanent-field"
+                />
+                {errors.brandName && <div className="field-error">{errors.brandName}</div>}
+                <small className="field-description">This is how your brand will appear to customers and cannot be modified after registration.</small>
               </div>
             </div>
           </div>
