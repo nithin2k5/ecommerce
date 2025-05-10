@@ -1,3 +1,9 @@
+/**
+ * DEPRECATED: This file is no longer in use. 
+ * The enhanced business dashboard CSS is now located at: 
+ * src/components/dashboard/BusinessDashboard.css
+ */
+
 .business-dashboard {
   max-width: 1200px;
   margin: 0 auto;

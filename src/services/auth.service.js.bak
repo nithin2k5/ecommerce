@@ -1,0 +1,90 @@
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8080/api/auth/';
+
+class AuthService {
+  login(username, password) {
+    return axios
+      .post(API_URL + 'signin', {
+        username,
+        password
+      })
+      .then(response => {
+        if (response.data.accessToken) {
+          localStorage.setItem('token', response.data.accessToken);
+          localStorage.setItem('user', JSON.stringify(response.data));
+        }
+        return response.data;
+      });
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
+
+  register(username, email, password, fullName) {
+    return axios.post(API_URL + 'signup', {
+      username,
+      email,
+      password,
+      fullName
+    });
+  }
+
+  registerBusiness(username, email, password, fullName, businessName, registrationCode) {
+    return axios.post(API_URL + 'business/signup', {
+      username,
+      email,
+      password,
+      fullName,
+      businessName,
+      registrationCode
+    });
+  }
+
+  getCurrentUser() {
+    return JSON.parse(localStorage.getItem('user'));
+  }
+
+  getToken() {
+    return localStorage.getItem('token');
+  }
+
+  isAuthenticated() {
+    const token = this.getToken();
+    return !!token;
+  }
+
+  hasRole(role) {
+    const user = this.getCurrentUser();
+    if (!user || !user.roles) {
+      return false;
+    }
+    return user.roles.includes(role);
+  }
+
+  isAdmin() {
+    return this.hasRole('ROLE_ADMIN');
+  }
+
+  isBusiness() {
+    return this.hasRole('ROLE_BUSINESS');
+  }
+
+  isUser() {
+    return this.hasRole('ROLE_USER');
+  }
+
+  // Add an authorization header to requests
+  authHeader() {
+    const token = this.getToken();
+    if (token) {
+      return { Authorization: 'Bearer ' + token };
+    } else {
+      return {};
+    }
+  }
+}
+
+export default new AuthService(); 

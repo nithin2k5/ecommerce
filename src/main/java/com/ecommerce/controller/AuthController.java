@@ -1,147 +1,161 @@
 package com.ecommerce.controller;
 
-import com.ecommerce.dto.AuthRequest;
-import com.ecommerce.dto.AuthResponse;
-import com.ecommerce.model.Role;
+import com.ecommerce.dto.JwtResponse;
+import com.ecommerce.dto.LoginRequest;
+import com.ecommerce.dto.MessageResponse;
+import com.ecommerce.dto.SignupRequest;
 import com.ecommerce.model.User;
 import com.ecommerce.repository.UserRepository;
-import com.ecommerce.security.JwtTokenProvider;
-import com.ecommerce.service.UserService;
+import com.ecommerce.security.JwtUtils;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "http://localhost:3000", maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class AuthController {
+    
+    @Value("${business.registration.code:BUSINESS_SECRET_CODE}")
+    private String businessRegistrationCode;
+    
+    @Autowired
+    AuthenticationManager authenticationManager;
 
     @Autowired
-    private AuthenticationManager authenticationManager;
+    UserRepository userRepository;
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    PasswordEncoder encoder;
 
     @Autowired
-    private UserService userService;
+    JwtUtils jwtUtils;
 
-    @Autowired
-    private UserRepository userRepository;
+    @PostMapping("/signin")
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
-            );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(authentication);
+        
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+        
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(item -> item.getAuthority())
+                .collect(Collectors.toList());
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String token = jwtTokenProvider.generateToken(userDetails);
-
-            User user = userService.getUserByUsername(authRequest.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getId(), user.getRoles()));
-        } catch (BadCredentialsException e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Invalid username or password");
-            response.put("message", "Authentication failed");
-            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
-        } catch (Exception e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", e.getMessage());
-            response.put("message", "Login failed");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return ResponseEntity.ok(new JwtResponse(jwt,
+                user.getId(),
+                userDetails.getUsername(),
+                user.getEmail(),
+                roles));
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        try {
-            // Check if username or email already exists
-            if (userService.usernameExists(user.getUsername())) {
-                Map<String, String> response = new HashMap<>();
-                response.put("error", "Username already exists");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
-            if (userService.emailExists(user.getEmail())) {
-                Map<String, String> response = new HashMap<>();
-                response.put("error", "Email already exists");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
-            // Create new user
-            Set<Role> roles = new HashSet<>();
-            roles.add(Role.USER);
-            User registeredUser = userService.createUser(user, roles);
-
-            return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
-        } catch (Exception e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    @PostMapping("/signup")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Username is already taken!"));
         }
+
+        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Email is already in use!"));
+        }
+
+        // Create new user's account
+        User user = new User();
+        user.setUsername(signUpRequest.getUsername());
+        user.setEmail(signUpRequest.getEmail());
+        user.setPassword(encoder.encode(signUpRequest.getPassword()));
+        user.setFullName(signUpRequest.getFullName());
+
+        Set<String> strRoles = signUpRequest.getRoles();
+        Set<String> roles = new HashSet<>();
+
+        if (strRoles == null || strRoles.isEmpty()) {
+            roles.add("ROLE_USER");
+        } else {
+            strRoles.forEach(role -> {
+                switch (role) {
+                    case "admin":
+                        roles.add("ROLE_ADMIN");
+                        break;
+                    case "business":
+                        roles.add("ROLE_BUSINESS");
+                        break;
+                    default:
+                        roles.add("ROLE_USER");
+                }
+            });
+        }
+
+        user.setRoles(roles);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
     
-    @PostMapping("/register/business")
-    public ResponseEntity<?> registerBusiness(@RequestBody Map<String, Object> requestBody) {
-        try {
-            // Extract user details from request
-            User user = new User();
-            user.setUsername((String) requestBody.get("username"));
-            user.setPassword((String) requestBody.get("password"));
-            user.setEmail((String) requestBody.get("email"));
-            user.setFullName((String) requestBody.get("fullName"));
-            
-            // Set business details
-            user.setBusinessName((String) requestBody.get("businessName"));
-            user.setBusinessDescription((String) requestBody.getOrDefault("businessType", ""));
-            
-            // Check if username or email already exists
-            if (userService.usernameExists(user.getUsername())) {
-                Map<String, String> response = new HashMap<>();
-                response.put("error", "Username already exists");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
-            if (userService.emailExists(user.getEmail())) {
-                Map<String, String> response = new HashMap<>();
-                response.put("error", "Email already exists");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
-            // Create business admin user with BUSINESS_ADMIN role
-            Set<Role> roles = new HashSet<>();
-            roles.add(Role.BUSINESS_ADMIN); // Primary role
-            roles.add(Role.USER); // Secondary role for basic access
-            
-            User registeredUser = userService.createUser(user, roles);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Business account registered successfully");
-            response.put("userId", registeredUser.getId());
-            response.put("username", registeredUser.getUsername());
-            
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } catch (Exception e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    @PostMapping("/business/signup")
+    public ResponseEntity<?> registerBusinessUser(@Valid @RequestBody SignupRequest signUpRequest) {
+        // Validate business registration code
+        if (signUpRequest.getRegistrationCode() == null || 
+            !signUpRequest.getRegistrationCode().equals(businessRegistrationCode)) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Invalid business registration code"));
         }
+        
+        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Username is already taken!"));
+        }
+
+        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Email is already in use!"));
+        }
+
+        // Create new business user
+        User user = new User();
+        user.setUsername(signUpRequest.getUsername());
+        user.setEmail(signUpRequest.getEmail());
+        user.setPassword(encoder.encode(signUpRequest.getPassword()));
+        user.setFullName(signUpRequest.getFullName());
+        
+        // Assign business role
+        Set<String> roles = new HashSet<>();
+        roles.add("ROLE_BUSINESS");
+        user.setRoles(roles);
+        
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("Business account registered successfully!"));
+    }
+
+    @GetMapping("/status")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> checkStatus() {
+        return ResponseEntity.ok().body(new MessageResponse("Server is running"));
     }
 } 

@@ -26,6 +26,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import BusinessRegister from './components/auth/BusinessRegister';
 import BusinessRegisterForm from './components/auth/BusinessRegisterForm';
 import ApiTester from './components/utils/ApiTester';
+import TestConnection from './components/auth/TestConnection';
 
 import './styles/global.css';
 
@@ -54,13 +55,14 @@ function App() {
               <Route path="/category/fashion" element={<FashionProducts />} />
               <Route path="/category/provisions" element={<ProvisionsProducts />} />
               <Route path="/business/dashboard" element={
-                <ProtectedRoute roles={['BUSINESS_ADMIN', 'ADMIN']}>
+                <ProtectedRoute roles={['BUSINESS_ADMIN', 'ROLE_BUSINESS']}>
                   <BusinessDashboard />
                 </ProtectedRoute>
               } />
-              <Route path="/business-register" element={<BusinessRegister />} />
+              <Route path="/business-register" element={<BusinessRegisterForm />} />
               <Route path="/business-register-form" element={<BusinessRegisterForm />} />
               <Route path="/api-test" element={<ApiTester />} />
+              <Route path="/test-connection" element={<TestConnection />} />
             </Routes>
           </main>
           <Footer />

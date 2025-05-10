@@ -21,7 +21,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Replace with actual API call
+
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: {

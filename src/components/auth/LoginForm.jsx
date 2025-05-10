@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './LoginForm.css';
+import authService from '../../services/auth.service';
 
 const LoginForm = ({ isBusinessLogin = false }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
@@ -25,41 +27,38 @@ const LoginForm = ({ isBusinessLogin = false }) => {
     setError('');
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // For demo purposes, any login is successful with these credentials
-      if (isBusinessLogin) {
-        if (formData.email === 'business@example.com' && formData.password === 'password') {
-          // Set business token and user info in localStorage
-          localStorage.setItem('businessToken', 'mock-business-jwt-token');
-          localStorage.setItem('user', JSON.stringify({
-            id: 1,
-            name: 'Business Admin',
-            email: 'business@example.com',
-            roles: ['BUSINESS_ADMIN']
-          }));
-          
-          navigate('/business/dashboard');
-        } else {
-          setError('Invalid business credentials');
-        }
+      // Use auth service instead of direct axios call
+      const userData = await authService.login(formData.username, formData.password);
+      
+      // Redirect based on user role and login type
+      if (userData.roles.includes('ROLE_ADMIN')) {
+        navigate('/admin/dashboard');
+      } else if (isBusinessLogin && (userData.roles.includes('ROLE_BUSINESS') || userData.roles.includes('BUSINESS_ADMIN'))) {
+        // For business login, check for either ROLE_BUSINESS or BUSINESS_ADMIN
+        navigate('/business/dashboard');
+      } else if (isBusinessLogin) {
+        // If trying business login but no business role
+        setError('Your account does not have business access privileges');
+        setLoading(false);
       } else {
         // Regular user login
-        localStorage.setItem('token', 'mock-jwt-token');
-        localStorage.setItem('user', JSON.stringify({
-          id: 2,
-          name: 'Regular User',
-          email: formData.email,
-          roles: ['USER']
-        }));
-        
         navigate('/');
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
-    } finally {
       setLoading(false);
+      
+      // Handle server connection issues
+      if (!err.response) {
+        setError('Unable to connect to the authentication server. Please try again later.');
+        return;
+      }
+      
+      // Handle other errors
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || 'Invalid credentials');
+      } else {
+        setError('Login failed. Please try again.');
+      }
     }
   };
 
@@ -72,15 +71,15 @@ const LoginForm = ({ isBusinessLogin = false }) => {
         
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="username">Username</label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
               onChange={handleInputChange}
               required
-              placeholder={isBusinessLogin ? 'business@example.com' : 'Enter your email'}
+              placeholder="Enter your username"
             />
           </div>
           
@@ -93,7 +92,7 @@ const LoginForm = ({ isBusinessLogin = false }) => {
               value={formData.password}
               onChange={handleInputChange}
               required
-              placeholder={isBusinessLogin ? 'password (for demo)' : 'Enter your password'}
+              placeholder="Enter your password"
             />
           </div>
           

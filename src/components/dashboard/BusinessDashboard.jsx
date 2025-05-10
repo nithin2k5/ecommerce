@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './BusinessDashboard.css';
 import ProductManagement from './ProductManagement';
+import authService from '../../services/auth.service';
 
 const BusinessDashboard = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   
   // Mock data for dashboard
   const [stats, setStats] = useState({
@@ -59,28 +61,45 @@ const BusinessDashboard = () => {
     }
   ]);
 
+  // Add Product Form State
+  const [productData, setProductData] = useState({
+    name: '',
+    price: '',
+    description: '',
+    image: '',
+    category: '',
+    brand: '',
+    stock: ''
+  });
+
+  const categories = [
+    { value: 'electronics', label: 'Electronics' },
+    { value: 'mobiles', label: 'Mobile Phones' },
+    { value: 'fashion', label: 'Fashion' },
+    { value: 'provisions', label: 'Provisions' },
+    { value: 'appliances', label: 'Appliances' }
+  ];
+
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // Check authentication status
   useEffect(() => {
-    // In a real app, this would check for a valid token or session
     const checkAuth = async () => {
       try {
-        // Simulate API call to verify authentication
-        setTimeout(() => {
-          // For demo purposes, check if there's a business token in localStorage
-          const businessToken = localStorage.getItem('businessToken');
-          
-          if (businessToken) {
-            setIsAuthenticated(true);
-          } else {
-            // If no valid token, redirect to login
-            navigate('/business-login');
-          }
-          setLoading(false);
-        }, 1000);
+        // Use auth service to verify business role
+        const isAuth = authService.isAuthenticated();
+        const isBusiness = authService.isBusiness() || authService.hasRole('BUSINESS_ADMIN');
+        
+        if (isAuth && isBusiness) {
+          setIsAuthenticated(true);
+          setCurrentUser(authService.getCurrentUser());
+        } else {
+          // If no valid token or not a business user, redirect to login
+          navigate('/business-login');
+        }
+        setLoading(false);
       } catch (err) {
         setError('Failed to authenticate. Please try logging in again.');
         setLoading(false);
@@ -89,6 +108,48 @@ const BusinessDashboard = () => {
     
     checkAuth();
   }, [navigate]);
+
+  // Handle logout
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/business-login');
+  };
+
+  // Handle product form input changes
+  const handleProductInputChange = (e) => {
+    const { name, value } = e.target;
+    setProductData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle product form submission
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
+    // TODO: Add API call to save product
+    console.log('Product Data:', productData);
+    
+    // Add to stats for display purposes
+    setStats(prev => ({
+      ...prev,
+      totalProducts: prev.totalProducts + 1
+    }));
+    
+    // Reset form after successful submission
+    setProductData({
+      name: '',
+      price: '',
+      description: '',
+      image: '',
+      category: '',
+      brand: '',
+      stock: ''
+    });
+    
+    // Show success message
+    alert('Product added successfully!');
+  };
 
   // Render loading state
   if (loading) return <div className="dashboard-loading">Loading...</div>;
@@ -114,7 +175,22 @@ const BusinessDashboard = () => {
 
   return (
     <div className="business-dashboard">
-      <h1>Business Admin Dashboard</h1>
+      <div className="dashboard-header">
+        <h1>Business Admin Dashboard</h1>
+        
+        {/* User info and logout */}
+        <div className="user-controls">
+          <div className="user-info">
+            <span>Welcome, {currentUser?.username || 'Business Admin'}</span>
+          </div>
+          <button 
+            className="logout-btn" 
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
       
       {/* Dashboard Navigation */}
       <div className="dashboard-tabs">
@@ -123,6 +199,12 @@ const BusinessDashboard = () => {
           onClick={() => setActiveTab('overview')}
         >
           Overview
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'add-product' ? 'active' : ''}`}
+          onClick={() => setActiveTab('add-product')}
+        >
+          Add Product
         </button>
         <button 
           className={`tab-button ${activeTab === 'products' ? 'active' : ''}`}
@@ -186,16 +268,117 @@ const BusinessDashboard = () => {
                   <p className="activity-time">3 hours ago</p>
                 </div>
               </div>
-              <div className="activity-item">
-                <div className="activity-icon order-icon">📦</div>
-                <div className="activity-content">
-                  <p className="activity-text">Order #1189 status changed to "Shipped"</p>
-                  <p className="activity-time">5 hours ago</p>
-                </div>
-              </div>
             </div>
           </div>
         </>
+      )}
+
+      {/* Add Product Tab */}
+      {activeTab === 'add-product' && (
+        <div className="add-product-section">
+          <h2>Add New Product</h2>
+          <form className="product-form" onSubmit={handleProductSubmit}>
+            {/* Product Name */}
+            <div className="form-group">
+              <label htmlFor="name">Product Name</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={productData.name}
+                onChange={handleProductInputChange}
+                required
+              />
+            </div>
+
+            {/* Price */}
+            <div className="form-group">
+              <label htmlFor="price">Price ($)</label>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                value={productData.price}
+                onChange={handleProductInputChange}
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="form-group">
+              <label htmlFor="description">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                value={productData.description}
+                onChange={handleProductInputChange}
+                required
+                rows="4"
+              ></textarea>
+            </div>
+
+            {/* Image URL */}
+            <div className="form-group">
+              <label htmlFor="image">Image URL</label>
+              <input
+                type="text"
+                id="image"
+                name="image"
+                value={productData.image}
+                onChange={handleProductInputChange}
+                required
+              />
+            </div>
+
+            {/* Category */}
+            <div className="form-group">
+              <label htmlFor="category">Category</label>
+              <select
+                id="category"
+                name="category"
+                value={productData.category}
+                onChange={handleProductInputChange}
+                required
+              >
+                <option value="">Select a category</option>
+                {categories.map(cat => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Brand */}
+            <div className="form-group">
+              <label htmlFor="brand">Brand</label>
+              <input
+                type="text"
+                id="brand"
+                name="brand"
+                value={productData.brand}
+                onChange={handleProductInputChange}
+                required
+              />
+            </div>
+
+            {/* Stock */}
+            <div className="form-group">
+              <label htmlFor="stock">Stock</label>
+              <input
+                type="number"
+                id="stock"
+                name="stock"
+                value={productData.stock}
+                onChange={handleProductInputChange}
+                required
+                min="0"
+              />
+            </div>
+
+            <button type="submit" className="add-product-btn">Add Product</button>
+          </form>
+        </div>
       )}
 
       {/* Products Tab */}
@@ -203,48 +386,40 @@ const BusinessDashboard = () => {
         <ProductManagement />
       )}
 
-      {/* Admin Management Tab */}
+      {/* Admins Tab */}
       {activeTab === 'admins' && (
-        <div className="admins-section">
-          <div className="section-header">
-            <h2>Manage Administrators</h2>
-            <button className="add-admin-btn">+ Add Admin</button>
-          </div>
-
-          <div className="admins-table-container">
-            <table className="admins-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {admins.map(admin => (
-                  <tr key={admin.id}>
-                    <td>{admin.fullName}</td>
-                    <td>{admin.username}</td>
-                    <td>{admin.email}</td>
-                    <td>{admin.roles.join(', ')}</td>
-                    <td>
-                      <span className={`status-badge ${admin.active ? 'active' : 'inactive'}`}>
-                        {admin.active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button className="edit-btn">Edit</button>
-                        <button className="delete-btn">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="admin-management-section">
+          <h2>Admin Management</h2>
+          
+          <div className="admin-table">
+            <div className="admin-table-header">
+              <div className="header-cell">Username</div>
+              <div className="header-cell">Full Name</div>
+              <div className="header-cell">Email</div>
+              <div className="header-cell">Role</div>
+              <div className="header-cell">Status</div>
+              <div className="header-cell">Actions</div>
+            </div>
+            
+            {admins.map(admin => (
+              <div key={admin.id} className="admin-row">
+                <div className="cell">{admin.username}</div>
+                <div className="cell">{admin.fullName}</div>
+                <div className="cell">{admin.email}</div>
+                <div className="cell">{admin.roles.join(', ')}</div>
+                <div className="cell">
+                  <span className={`status-badge ${admin.active ? 'active' : 'inactive'}`}>
+                    {admin.active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div className="cell actions">
+                  <button className="edit-btn">Edit</button>
+                  <button className={`status-btn ${admin.active ? 'deactivate' : 'activate'}`}>
+                    {admin.active ? 'Deactivate' : 'Activate'}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

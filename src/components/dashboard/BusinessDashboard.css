@@ -249,6 +249,86 @@
   background-color: #da190b;
 }
 
+/* Add Product Section */
+.add-product-section {
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.add-product-section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.product-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .product-form {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.product-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.product-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.product-form input,
+.product-form textarea,
+.product-form select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  font-size: 1rem;
+}
+
+.product-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.product-form input:focus,
+.product-form textarea:focus,
+.product-form select:focus {
+  outline: none;
+  border-color: #2196f3;
+  background-color: #fff;
+}
+
+.product-form .submit-btn {
+  grid-column: 1 / -1;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.product-form .submit-btn:hover {
+  background-color: #45a049;
+}
+
 /* Recent Activity */
 .activity-list {
   display: flex;
@@ -344,5 +424,150 @@
   .tab-button {
     padding: 0.8rem 1rem;
     white-space: nowrap;
+  }
+}
+
+/* Dashboard Header with User Controls */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.logout-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #d32f2f;
+}
+
+/* Admin Table Styles */
+.admin-management-section {
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-management-section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.admin-table {
+  width: 100%;
+}
+
+.admin-table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr 1fr 0.8fr 1fr;
+  background-color: #f7f7f7;
+  padding: 0.75rem 1rem;
+  border-radius: 4px 4px 0 0;
+  font-weight: 600;
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr 1fr 0.8fr 1fr;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.admin-row:hover {
+  background-color: #f9f9f9;
+}
+
+.header-cell, .cell {
+  display: flex;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.status-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+  font-weight: 500;
+}
+
+.status-btn.deactivate {
+  background-color: #f44336;
+}
+
+.status-btn.activate {
+  background-color: #4caf50;
+}
+
+.add-product-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 1rem;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.add-product-btn:hover {
+  background-color: #45a049;
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .admin-table-header, .admin-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  
+  .header-cell:nth-child(3),
+  .header-cell:nth-child(4),
+  .cell:nth-child(3),
+  .cell:nth-child(4) {
+    display: none;
   }
 } 

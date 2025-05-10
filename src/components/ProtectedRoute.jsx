@@ -1,25 +1,48 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import authService from '../services/auth.service';
 
 const ProtectedRoute = ({ children, roles = [] }) => {
-  // Get auth state from Redux
-  const auth = useSelector(state => state.auth);
+  // Check if user is authenticated via auth service
+  const isAuthenticated = authService.isAuthenticated();
   
-  // Check if user is logged in
-  const isAuthenticated = localStorage.getItem('token') !== null;
+  // Get user roles from auth service
+  const user = authService.getCurrentUser();
+  const userRoles = user?.roles || [];
   
-  // Get user roles from localStorage if not in Redux
-  const userRoles = auth?.user?.roles || 
-    (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).roles : []);
+  // Map role aliases to handle different naming conventions
+  const roleMap = {
+    'BUSINESS_ADMIN': ['BUSINESS_ADMIN', 'ROLE_BUSINESS'],  // Map both role formats
+    'ADMIN': ['ADMIN', 'ROLE_ADMIN'],
+    'USER': ['USER', 'ROLE_USER']
+  };
+  
+  // Function to check if user has any of the required roles
+  const hasRequiredRole = () => {
+    if (roles.length === 0) return true;
+    
+    return roles.some(role => {
+      // Check direct role match
+      if (userRoles.includes(role)) return true;
+      
+      // Check mapped role aliases
+      const mappedRoles = roleMap[role] || [];
+      return mappedRoles.some(mappedRole => userRoles.includes(mappedRole));
+    });
+  };
   
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    return <Navigate to="/business-login" />;
+    // Redirect to business login if business role is required
+    if (roles.includes('BUSINESS_ADMIN') || roles.includes('ROLE_BUSINESS')) {
+      return <Navigate to="/business-login" />;
+    }
+    return <Navigate to="/login" />;
   }
   
   // If roles are specified and user doesn't have any required role
-  if (roles.length > 0 && !roles.some(role => userRoles.includes(role))) {
+  if (!hasRequiredRole()) {
     return <Navigate to="/" />;
   }
   
