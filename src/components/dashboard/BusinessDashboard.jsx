@@ -2,9 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './BusinessDashboard.css';
 import ProductManagement from './ProductManagement';
+import UserManagement from './UserManagement';
+import BusinessStatistics from './BusinessStatistics';
 import authService from '../../services/auth.service';
 import adminService from '../../services/admin.service';
-import { FaChartLine, FaBox, FaUsers, FaDollarSign, FaPlus, FaUserCog, FaEdit, FaCheck, FaTimes, FaShieldAlt, FaLock } from 'react-icons/fa';
+import { 
+  FaChartLine, 
+  FaBox, 
+  FaUsers, 
+  FaDollarSign, 
+  FaPlus, 
+  FaUserCog, 
+  FaEdit, 
+  FaCheck, 
+  FaTimes, 
+  FaShieldAlt, 
+  FaLock, 
+  FaTachometerAlt, 
+  FaShoppingCart, 
+  FaTags, 
+  FaSignOutAlt, 
+  FaBell, 
+  FaListAlt, 
+  FaChartBar, 
+  FaCog,
+  FaBars,
+  FaKey
+} from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 const BusinessDashboard = () => {
   const navigate = useNavigate();
@@ -12,13 +37,20 @@ const BusinessDashboard = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
   
   // Mock data for dashboard
   const [stats, setStats] = useState({
     totalAdmins: 5,
     totalProducts: 128,
     totalOrders: 213,
-    totalRevenue: 15499.99
+    totalRevenue: 15499.99,
+    lowStockItems: 8,
+    ordersToday: 12,
+    monthlyGrowth: 14.5,
+    topSellingCategory: 'Electronics'
   });
 
   // Admins state
@@ -80,6 +112,14 @@ const BusinessDashboard = () => {
     password: ''
   });
 
+  // Mock data for order statistics
+  const [orderStats, setOrderStats] = useState({
+    pending: 15,
+    processing: 8,
+    shipped: 12,
+    delivered: 178
+  });
+
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
@@ -101,6 +141,17 @@ const BusinessDashboard = () => {
           if (user && (user.roles.includes('ROLE_ADMIN') || user.roles.includes('BUSINESS_ADMIN'))) {
             adminService.trackLogin(user.username);
           }
+
+          // Simulate loading notifications
+          setTimeout(() => {
+            setNotifications([
+              { id: 1, text: 'New order #ORD-2025 received', time: '3 minutes ago', read: false },
+              { id: 2, text: 'Low stock alert: iPhone 14 Pro (5 remaining)', time: '1 hour ago', read: false },
+              { id: 3, text: 'Order #ORD-2023 was delivered', time: '2 hours ago', read: true },
+              { id: 4, text: 'New review received (4.5 stars)', time: '1 day ago', read: true }
+            ]);
+            setUnreadNotifications(2);
+          }, 1000);
         } else {
           // If no valid token or not a business user, redirect to login
           navigate('/business-login');
@@ -114,6 +165,14 @@ const BusinessDashboard = () => {
     
     checkAuth();
   }, [navigate]);
+
+  // Redirect non-super admin users from restricted tabs
+  useEffect(() => {
+    // If user is not a super admin and tries to access restricted tabs
+    if (!isSuperAdmin && ['users', 'admins', 'settings'].includes(activeTab)) {
+      setActiveTab('overview');
+    }
+  }, [isSuperAdmin, activeTab]);
 
   // Load admin data when super admin tab is activated or when super admin status changes
   useEffect(() => {
@@ -134,72 +193,72 @@ const BusinessDashboard = () => {
     loadAdminData();
   }, [activeTab, isSuperAdmin]);
 
-  // Handle logout
   const handleLogout = () => {
     authService.logout();
     navigate('/business-login');
   };
 
-  // Handle product form input changes
   const handleProductInputChange = (e) => {
     const { name, value } = e.target;
-    setProductData(prev => ({
-      ...prev,
+    setProductData({
+      ...productData,
       [name]: value
-    }));
+    });
   };
 
-  // Handle super admin login input changes
   const handleSuperAdminInputChange = (e) => {
     const { name, value } = e.target;
-    setSuperAdminCredentials(prev => ({
-      ...prev,
+    setSuperAdminCredentials({
+      ...superAdminCredentials,
       [name]: value
-    }));
+    });
   };
 
-  // Handle super admin login
   const handleSuperAdminLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // Call admin service to validate super admin credentials
       const response = await adminService.superAdminLogin(
-        currentUser?.username,
+        currentUser.username,
         superAdminCredentials.username,
         superAdminCredentials.password
       );
       
-      setIsSuperAdmin(true);
-      
-      // Add the SUPER_ADMIN role to the current user
-      if (currentUser) {
-        const updatedUser = {
-          ...currentUser,
-          roles: [...(currentUser.roles || []), 'SUPER_ADMIN']
-        };
-        setCurrentUser(updatedUser);
+      if (response.data) {
+        setIsSuperAdmin(true);
         
-        // Update in local storage
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        // If the user object doesn't have roles array, initialize it
+        if (!currentUser.roles) {
+          currentUser.roles = [];
+        }
+        
+        // Add SUPER_ADMIN role if not already there
+        if (!currentUser.roles.includes('SUPER_ADMIN')) {
+          const updatedUser = {
+            ...currentUser,
+            roles: [...currentUser.roles, 'SUPER_ADMIN']
+          };
+          setCurrentUser(updatedUser);
+          
+          // Update in local storage
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        
+        setShowSuperAdminLogin(false);
+        
+        // Set active tab to overview to help user see the new available tabs
+        setActiveTab('overview');
+        
+        toast.success(response.data.message || 'Super Admin access granted! You now have access to all features.');
+        
+        // Add a slight delay to show the additional tabs notification
+        setTimeout(() => {
+          toast.info('New tabs unlocked: Users, Admins and Settings are now available in the navigation bar.');
+        }, 1500);
       }
-      
-      // Add activity
-      setActivities(prev => [
-        {
-          id: new Date().getTime(),
-          type: 'admin',
-          text: `Super Admin access granted to ${currentUser?.username || 'current user'}`,
-          time: 'Just now'
-        },
-        ...prev
-      ]);
-      
-      setShowSuperAdminLogin(false);
-      alert(response.data.message || 'Super Admin access granted!');
     } catch (error) {
-      alert(error.response?.data?.message || 'Invalid Super Admin credentials!');
+      toast.error(error.response?.data?.message || 'Invalid Super Admin credentials!');
     } finally {
       setIsLoading(false);
       setSuperAdminCredentials({ username: '', password: '' });
@@ -240,35 +299,35 @@ const BusinessDashboard = () => {
     });
     
     // Show success message
-    alert('Product added successfully!');
+    toast.success('Product added successfully!');
   };
 
   // Get the business ID from the current user
   const getBusinessId = () => {
-    if (currentUser && currentUser.id) {
-      return currentUser.id;
-    } else if (currentUser && currentUser.businessId) {
-      return currentUser.businessId;
-    }
-    return null;
+    return currentUser?.businessId || '1';  // Default to 1 for mockup
+  };
+  
+  // Mark all notifications as read
+  const markAllNotificationsAsRead = () => {
+    setNotifications(notifications.map(notif => ({ ...notif, read: true })));
+    setUnreadNotifications(0);
   };
 
-  // Render loading state
-  if (loading) return <div className="dashboard-loading">Loading...</div>;
+  // If loading or authentication error
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        <p>Loading dashboard...</p>
+      </div>
+    );
+  }
   
-  // Render error state (if any)
-  if (error) return <div className="dashboard-error">{error}</div>;
-  
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
+  if (error) {
     return (
       <div className="auth-error">
-        <h2>Authentication Required</h2>
-        <p>You need to be logged in to access the business dashboard.</p>
-        <button 
-          className="login-redirect-btn" 
-          onClick={() => navigate('/business-login')}
-        >
+        <h2>Authentication Error</h2>
+        <p>{error}</p>
+        <button className="login-redirect-btn" onClick={() => navigate('/business-login')}>
           Go to Login
         </button>
       </div>
@@ -276,345 +335,313 @@ const BusinessDashboard = () => {
   }
 
   return (
-    <div className="business-dashboard">
-      <div className="dashboard-header">
-        <h1>Business Admin Dashboard</h1>
-        
-        {/* User info and logout */}
-        <div className="user-controls">
-          <div className="user-info">
-            <span>Welcome, {currentUser?.username || 'Business Admin'}</span>
-            {isSuperAdmin && <span className="super-admin-badge"><FaShieldAlt /> Super Admin</span>}
+    <div className="business-dashboard simplified">
+      {/* Main Content */}
+      <div className="dashboard-content full-width">
+        {/* Top Navigation Bar */}
+        <div className="dashboard-topbar">
+          <div className="topbar-title">
+            <h1><FaTachometerAlt /> Business Dashboard</h1>
           </div>
-          {!isSuperAdmin && (
-            <button 
-              className="super-admin-btn" 
-              onClick={() => setShowSuperAdminLogin(!showSuperAdminLogin)}
-            >
-              <FaLock /> Super Admin
-            </button>
-          )}
-          <button 
-            className="logout-btn" 
-            onClick={handleLogout}
-          >
-            <FaUserCog /> Logout
-          </button>
-        </div>
-      </div>
-      
-      {/* Super Admin Login Form */}
-      {showSuperAdminLogin && (
-        <div className="super-admin-login">
-          <h3><FaShieldAlt /> Super Admin Access</h3>
-          <p className="super-admin-info-text">
-            Enter the credentials of an existing Super Admin to gain Super Admin privileges.
-            <br />
-            <strong>For testing:</strong> Username: superadmin, Password: password123
-          </p>
-          <form onSubmit={handleSuperAdminLogin}>
-            <div className="form-group">
-              <label htmlFor="superUsername">Super Admin Username</label>
-              <input
-                type="text"
-                id="superUsername"
-                name="username"
-                value={superAdminCredentials.username}
-                onChange={handleSuperAdminInputChange}
-                placeholder="Super Admin Username"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="superPassword">Super Admin Password</label>
-              <input
-                type="password"
-                id="superPassword"
-                name="password"
-                value={superAdminCredentials.password}
-                onChange={handleSuperAdminInputChange}
-                placeholder="Super Admin Password"
-                required
-              />
-            </div>
-            <div className="form-actions">
+          
+          <div className="topbar-actions">
+            {/* Navigation Tabs */}
+            <div className="topbar-tabs">
               <button 
-                type="submit" 
-                className="super-admin-submit"
-                disabled={isLoading}
+                className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overview')}
               >
-                {isLoading ? 'Verifying...' : <><FaLock /> Login</>}
+                <FaChartLine /> Overview
               </button>
               <button 
-                type="button" 
-                className="super-admin-cancel"
-                onClick={() => setShowSuperAdminLogin(false)}
-                disabled={isLoading}
+                className={`tab-button ${activeTab === 'products' ? 'active' : ''}`}
+                onClick={() => setActiveTab('products')}
               >
-                Cancel
+                <FaBox /> Products
               </button>
+              {isSuperAdmin && (
+                <>
+                  <button 
+                    className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('users')}
+                  >
+                    <FaUsers /> Users
+                  </button>
+                  <button 
+                    className={`tab-button ${activeTab === 'admins' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('admins')}
+                  >
+                    <FaUserCog /> Admins
+                  </button>
+                  <button 
+                    className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('settings')}
+                  >
+                    <FaCog /> Settings
+                  </button>
+                </>
+              )}
             </div>
-          </form>
-        </div>
-      )}
-      
-      {/* Dashboard Navigation */}
-      <div className="dashboard-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          <FaChartLine /> Overview
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'add-product' ? 'active' : ''}`}
-          onClick={() => setActiveTab('add-product')}
-        >
-          <FaPlus /> Add Product
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'products' ? 'active' : ''}`}
-          onClick={() => setActiveTab('products')}
-        >
-          <FaBox /> Product Management
-        </button>
-        {isSuperAdmin && (
-          <button 
-            className={`tab-button ${activeTab === 'admins' ? 'active' : ''}`}
-            onClick={() => setActiveTab('admins')}
-          >
-            <FaUsers /> Admin Management
-          </button>
-        )}
-      </div>
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <>
-          {/* Stats Overview */}
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>Total Admins</h3>
-              <p className="stat-number">{stats.totalAdmins}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Total Products</h3>
-              <p className="stat-number">{stats.totalProducts}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Total Orders</h3>
-              <p className="stat-number">{stats.totalOrders}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Total Revenue</h3>
-              <p className="stat-number">₹{stats.totalRevenue.toFixed(2)}</p>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="recent-activity-section">
-            <div className="section-header">
-              <h2>Recent Activity</h2>
-            </div>
-            
-            <div className="activity-list">
-              {activities.map(activity => (
-                <div key={activity.id} className="activity-item">
-                  <div className={`activity-icon ${activity.type}-icon`}>
-                    {activity.type === 'order' && <FaDollarSign />}
-                    {activity.type === 'product' && <FaBox />}
-                    {activity.type === 'admin' && <FaUsers />}
-                  </div>
-                  <div className="activity-content">
-                    <p className="activity-text">{activity.text}</p>
-                    <p className="activity-time">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Add Product Tab */}
-      {activeTab === 'add-product' && (
-        <div className="add-product-section">
-          <h2>Add New Product</h2>
-          
-          <form className="product-form" onSubmit={handleProductSubmit}>
-            <div className="form-group">
-              <label htmlFor="name">Product Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={productData.name}
-                onChange={handleProductInputChange}
-                placeholder="Enter product name"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="price">Price (₹)</label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={productData.price}
-                onChange={handleProductInputChange}
-                placeholder="Enter price"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="category">Category</label>
-              <select
-                id="category"
-                name="category"
-                value={productData.category}
-                onChange={handleProductInputChange}
-                required
+            {/* Notification Center */}
+            <div className="notification-center">
+              <button 
+                className="notification-btn" 
+                onClick={() => setShowNotifications(!showNotifications)}
+                title="Notifications"
               >
-                <option value="">Select a category</option>
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="stock">Stock Quantity</label>
-              <input
-                type="number"
-                id="stock"
-                name="stock"
-                value={productData.stock}
-                onChange={handleProductInputChange}
-                placeholder="Enter available stock"
-                min="0"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="image">Image URL</label>
-              <input
-                type="url"
-                id="image"
-                name="image"
-                value={productData.image}
-                onChange={handleProductInputChange}
-                placeholder="Enter image URL"
-                required
-              />
-            </div>
-            
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="description">Description</label>
-              <textarea
-                id="description"
-                name="description"
-                value={productData.description}
-                onChange={handleProductInputChange}
-                placeholder="Enter product description"
-                rows="4"
-                required
-              ></textarea>
-            </div>
-            
-            <button type="submit" className="submit-btn">
-              <FaPlus /> Add Product
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Products Management Tab */}
-      {activeTab === 'products' && (
-        <ProductManagement businessId={currentUser?.id || currentUser?.businessId} />
-      )}
-
-      {/* Admin Management Tab - Only accessible to Super Admins */}
-      {activeTab === 'admins' && isSuperAdmin && (
-        <div className="admin-management-section">
-          <h2>Admin Management</h2>
-          
-          {/* Super Admin badge and info */}
-          <div className="super-admin-info">
-            <FaShieldAlt className="shield-icon" />
-            <p>You have Super Admin privileges to manage all admin accounts.</p>
-          </div>
-          
-          {/* Add Admin Button */}
-          <button className="add-admin-btn">
-            <FaPlus /> Add New Admin
-          </button>
-          
-          {loadingAdmins ? (
-            <div className="loading-indicator">Loading admin data...</div>
-          ) : (
-            <div className="admin-table">
-              <div className="admin-table-header">
-                <div className="header-cell">Username</div>
-                <div className="header-cell">Full Name</div>
-                <div className="header-cell">Email</div>
-                <div className="header-cell">Department</div>
-                <div className="header-cell">Role</div>
-                <div className="header-cell">Status</div>
-                <div className="header-cell">Actions</div>
-              </div>
+                <FaBell />
+                {unreadNotifications > 0 && (
+                  <span className="notification-badge">{unreadNotifications}</span>
+                )}
+              </button>
               
-              {admins.map(admin => (
-                <div key={admin.id} className="admin-row">
-                  <div className="cell">{admin.user.username}</div>
-                  <div className="cell">{admin.user.fullName}</div>
-                  <div className="cell">{admin.user.email}</div>
-                  <div className="cell">{admin.department}</div>
-                  <div className="cell">
-                    {admin.superAdmin ? (
-                      <span className="super-admin-role">
-                        <FaShieldAlt /> Super Admin
-                      </span>
+              {showNotifications && (
+                <div className="notification-dropdown">
+                  <div className="notification-header">
+                    <h3>Notifications</h3>
+                    <button onClick={markAllNotificationsAsRead}>Mark all as read</button>
+                  </div>
+                  <div className="notification-list">
+                    {notifications.length === 0 ? (
+                      <div className="no-notifications">
+                        <p>No notifications yet</p>
+                      </div>
                     ) : (
-                      admin.user.roles.join(', ').replace('ROLE_', '')
+                      notifications.map(notification => (
+                        <div 
+                          key={notification.id} 
+                          className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                        >
+                          <div className="notification-content">
+                            <p>{notification.text}</p>
+                            <span className="notification-time">{notification.time}</span>
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
-                  <div className="cell">
-                    <span className={`status-badge ${admin.user.enabled ? 'active' : 'inactive'}`}>
-                      {admin.user.enabled ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  <div className="cell actions">
-                    <button className="edit-btn"><FaEdit /></button>
-                    <button className={`status-btn ${admin.user.enabled ? 'deactivate' : 'activate'}`}>
-                      {admin.user.enabled ? <FaTimes /> : <FaCheck />}
-                    </button>
-                  </div>
                 </div>
-              ))}
+              )}
+            </div>
+
+            {isSuperAdmin && (
+              <div className="super-admin-badge">
+                <FaShieldAlt /> Super Admin
+              </div>
+            )}
+            
+            {!isSuperAdmin && (
+              <button 
+                className="super-admin-access-btn" 
+                onClick={() => setShowSuperAdminLogin(true)}
+              >
+                <FaShieldAlt /> Super Admin Access
+              </button>
+            )}
+            
+            <div className="user-info">
+              <span className="username">{currentUser?.username || 'User'}</span>
+            </div>
+            
+            <button className="logout-btn-small" onClick={handleLogout}>
+              <FaSignOutAlt />
+            </button>
+          </div>
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="dashboard-main">
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className="dashboard-overview">
+              <BusinessStatistics businessId={getBusinessId()} />
+            </div>
+          )}
+
+          {/* Products Tab */}
+          {activeTab === 'products' && (
+            <div className="product-management-tab">
+              <ProductManagement businessId={getBusinessId()} />
+            </div>
+          )}
+          
+          {/* Users Tab - Only for Super Admins */}
+          {activeTab === 'users' && isSuperAdmin && (
+            <div className="user-management-tab">
+              <UserManagement businessId={getBusinessId()} />
+            </div>
+          )}
+
+          {/* Admins Tab - Only for Super Admins */}
+          {activeTab === 'admins' && isSuperAdmin && (
+            <div className="admin-management-section">
+              <div className="section-header">
+                <h2>Admin Management</h2>
+                <button className="add-admin-btn">
+                  <FaUserCog /> Add New Admin
+                </button>
+              </div>
+              
+              <div className="admins-table-container">
+                {loadingAdmins ? (
+                  <div className="loading-indicator">Loading admin data...</div>
+                ) : admins.length > 0 ? (
+                  <table className="admins-table">
+                    <thead>
+                      <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {admins.map(admin => (
+                        <tr key={admin.id}>
+                          <td>{admin.username}</td>
+                          <td>{admin.email}</td>
+                          <td>{admin.role}</td>
+                          <td>
+                            <span className={`status-badge ${admin.active ? 'active' : 'inactive'}`}>
+                              {admin.active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="action-buttons">
+                              <button className="edit-btn" title="Edit Admin">
+                                <FaEdit />
+                              </button>
+                              {admin.active ? (
+                                <button className="status-btn deactivate" title="Deactivate">
+                                  <FaTimes />
+                                </button>
+                              ) : (
+                                <button className="status-btn activate" title="Activate">
+                                  <FaCheck />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="no-data">No admins found</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Show restricted access message for non-super admins trying to access restricted tabs */}
+          {(['users', 'admins', 'settings'].includes(activeTab) && !isSuperAdmin) && (
+            <div className="restricted-access">
+              <div className="lock-icon">
+                <FaLock />
+              </div>
+              <h2>Super Admin Access Required</h2>
+              <p>You need Super Admin privileges to access this section.</p>
+              <button 
+                className="super-admin-access-btn"
+                onClick={() => setShowSuperAdminLogin(true)}
+              >
+                <FaShieldAlt /> Get Super Admin Access
+              </button>
+            </div>
+          )}
+          
+          {/* Settings Tab - Only for Super Admins */}
+          {activeTab === 'settings' && isSuperAdmin && (
+            <div className="settings-tab">
+              <div className="section-header">
+                <h2>Account Settings</h2>
+              </div>
+              
+              <div className="settings-grid">
+                <div className="settings-card">
+                  <h3>Profile Information</h3>
+                  <p>Update your business details and profile information</p>
+                  <button className="settings-action-btn">Manage Profile</button>
+                </div>
+                
+                <div className="settings-card">
+                  <h3>Security Settings</h3>
+                  <p>Change password and security preferences</p>
+                  <button className="settings-action-btn">Security Settings</button>
+                </div>
+                
+                <div className="settings-card">
+                  <h3>Admin Privileges</h3>
+                  <p>Manage admin access and permissions</p>
+                  <button className="settings-action-btn">Admin Settings</button>
+                </div>
+              </div>
             </div>
           )}
         </div>
-      )}
+      </div>
       
-      {/* Message for non-Super Admins trying to access admin tab */}
-      {activeTab === 'admins' && !isSuperAdmin && (
-        <div className="restricted-access">
-          <FaLock className="lock-icon" />
-          <h2>Restricted Access</h2>
-          <p>Only Super Admins can manage administrator accounts.</p>
-          <button 
-            className="super-admin-access-btn"
-            onClick={() => setShowSuperAdminLogin(true)}
-          >
-            <FaShieldAlt /> Request Super Admin Access
-          </button>
+      {/* Super Admin Login Modal */}
+      {showSuperAdminLogin && (
+        <div className="modal-overlay">
+          <div className="super-admin-login">
+            <h3>Super Admin Access</h3>
+            
+            <div className="super-admin-info">
+              <FaShieldAlt className="shield-icon" />
+              <p>Enter your Super Admin credentials to unlock full dashboard functionality including Users, Admin Management, and Settings.</p>
+            </div>
+            
+            <form onSubmit={handleSuperAdminLogin}>
+              <div className="form-group">
+                <label>Super Admin Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={superAdminCredentials.username}
+                  onChange={handleSuperAdminInputChange}
+                  required
+                  placeholder="Enter super admin username"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Super Admin Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={superAdminCredentials.password}
+                  onChange={handleSuperAdminInputChange}
+                  required
+                  placeholder="Enter super admin password"
+                />
+              </div>
+              
+              <div className="super-admin-note">
+                <p>Default credentials for testing: <strong>superadmin</strong> / <strong>password123</strong></p>
+              </div>
+              
+              <div className="form-actions">
+                <button 
+                  type="submit" 
+                  className="super-admin-submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Verifying...' : 'Access Super Admin Dashboard'}
+                </button>
+                <button 
+                  type="button" 
+                  className="super-admin-cancel"
+                  onClick={() => setShowSuperAdminLogin(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { ToastContainer } from 'react-toastify';
@@ -31,57 +31,73 @@ import TestConnection from './components/auth/TestConnection';
 
 import './styles/global.css';
 
+// Wrapper component to conditionally render SubNav
+const AppContent = () => {
+  const location = useLocation();
+  const isDashboardRoute = 
+    location.pathname === '/business/dashboard' || 
+    location.pathname === '/admin/dashboard';
+
+  return (
+    <div className="App">
+      <Header />
+      {!isDashboardRoute && <SubNav />}
+      <main className="neon-box">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/category/mens-fashion" element={<MensFashion />} />
+          <Route path="/category/womens-fashion" element={<WomensFashion />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={
+            <ProtectedRoute roles={['ROLE_USER', 'USER']}>
+              <Cart />
+            </ProtectedRoute>
+          } />
+          <Route path="/checkout" element={
+            <ProtectedRoute roles={['ROLE_USER', 'USER']}>
+              <CheckoutForm />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute roles={['ROLE_USER', 'USER']}>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/login" element={<Login />} />
+          <Route path="/business-login" element={<LoginForm isBusinessLogin={true} />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/category/mobiles" element={<MobileProducts />} />
+          <Route path="/category/electronics" element={<ElectronicsProducts />} />
+          <Route path="/category/appliances" element={<AppliancesProducts />} />
+          <Route path="/category/fashion" element={<FashionProducts />} />
+          <Route path="/category/provisions" element={<ProvisionsProducts />} />
+          <Route path="/business/dashboard" element={
+            <ProtectedRoute roles={['BUSINESS_ADMIN', 'ROLE_BUSINESS']}>
+              <BusinessDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute roles={['ROLE_ADMIN', 'ADMIN']}>
+              <BusinessDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/business-register" element={<BusinessRegisterForm />} />
+          <Route path="/business-register-form" element={<BusinessRegisterForm />} />
+          <Route path="/api-test" element={<ApiTester />} />
+          <Route path="/test-connection" element={<TestConnection />} />
+        </Routes>
+      </main>
+      <Footer />
+      <ToastContainer position="top-right" autoClose={5000} />
+    </div>
+  );
+};
+
 function App() {
   return (
     <Provider store={store}>
       <Router>
-        <div className="App">
-    
-          <Header />
-          <SubNav />
-          <main className="neon-box">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/category/mens-fashion" element={<MensFashion />} />
-              <Route path="/category/womens-fashion" element={<WomensFashion />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/cart" element={
-                <ProtectedRoute roles={['ROLE_USER', 'USER']}>
-                  <Cart />
-                </ProtectedRoute>
-              } />
-              <Route path="/checkout" element={
-                <ProtectedRoute roles={['ROLE_USER', 'USER']}>
-                  <CheckoutForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute roles={['ROLE_USER', 'USER']}>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/login" element={<Login />} />
-              <Route path="/business-login" element={<LoginForm isBusinessLogin={true} />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/category/mobiles" element={<MobileProducts />} />
-              <Route path="/category/electronics" element={<ElectronicsProducts />} />
-              <Route path="/category/appliances" element={<AppliancesProducts />} />
-              <Route path="/category/fashion" element={<FashionProducts />} />
-              <Route path="/category/provisions" element={<ProvisionsProducts />} />
-              <Route path="/business/dashboard" element={
-                <ProtectedRoute roles={['BUSINESS_ADMIN', 'ROLE_BUSINESS']}>
-                  <BusinessDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/business-register" element={<BusinessRegisterForm />} />
-              <Route path="/business-register-form" element={<BusinessRegisterForm />} />
-              <Route path="/api-test" element={<ApiTester />} />
-              <Route path="/test-connection" element={<TestConnection />} />
-            </Routes>
-          </main>
-          <Footer />
-          <ToastContainer position="top-right" autoClose={5000} />
-        </div>
+        <AppContent />
       </Router>
     </Provider>
   );

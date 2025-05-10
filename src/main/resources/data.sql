@@ -2,14 +2,14 @@
 DELETE FROM admin_details;
 DELETE FROM business_details;
 DELETE FROM user_roles;
-DELETE FROM products;
+DELETE FROM product;
 DELETE FROM orders;
 DELETE FROM order_items;
-DELETE FROM categories;
+DELETE FROM category;
 DELETE FROM users;
 
 -- Insert categories
-INSERT INTO categories (id, name, description) VALUES
+INSERT INTO category (id, name, description) VALUES
 (1, 'Electronics', 'Electronic devices and accessories'),
 (2, 'Mobiles', 'Mobile phones and accessories'),
 (3, 'Fashion', 'Clothing, shoes and accessories'),
@@ -69,7 +69,7 @@ INSERT INTO business_details (id, user_id, business_name, brand_name, phone) VAL
 (3, 13, 'Home Essentials LLC', 'HomeSmart', '+1122334455');
 
 -- Insert products
-INSERT INTO products (id, name, description, price, stock, image_url, category_id, business_id, created_at) VALUES
+INSERT INTO product (id, title, description, price, stock, image_url, category_id, business_id, created_at) VALUES
 -- Electronics products (Business 2 - Tech Solutions)
 (1, 'Smartphone X Pro', 'Latest flagship smartphone with advanced features', 999.99, 50, 'https://example.com/smartphone.jpg', 2, 2, CURRENT_TIMESTAMP()),
 (2, 'Ultra HD Smart TV', '65-inch 4K Ultra HD Smart TV with voice control', 1299.99, 20, 'https://example.com/tv.jpg', 1, 2, CURRENT_TIMESTAMP()),
