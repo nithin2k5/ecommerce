@@ -1,9 +1,11 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import authService from '../services/auth.service';
 
 const ProtectedRoute = ({ children, roles = [] }) => {
+  const location = useLocation();
+  
   // Check if user is authenticated via auth service
   const isAuthenticated = authService.isAuthenticated();
   
@@ -34,11 +36,16 @@ const ProtectedRoute = ({ children, roles = [] }) => {
   
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
+    // Save current path for redirect after login (for shopping cart purposes)
+    if (location.pathname.includes('/cart') || location.pathname.includes('/checkout')) {
+      sessionStorage.setItem('returnPath', location.pathname);
+    }
+    
     // Redirect to business login if business role is required
     if (roles.includes('BUSINESS_ADMIN') || roles.includes('ROLE_BUSINESS')) {
       return <Navigate to="/business-login" />;
     }
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} />;
   }
   
   // If roles are specified and user doesn't have any required role

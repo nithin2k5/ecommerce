@@ -12,6 +12,7 @@ import Cart from './components/cart/Cart';
 import CheckoutForm from './components/checkout/CheckoutForm';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import Profile from './components/auth/Profile';
 import HomePage from './components/home/HomePage';
 import MensFashion from './components/home/MensFashion';
 import WomensFashion from './components/home/WomensFashion';
@@ -44,9 +45,22 @@ function App() {
               <Route path="/category/mens-fashion" element={<MensFashion />} />
               <Route path="/category/womens-fashion" element={<WomensFashion />} />
               <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<CheckoutForm />} />
-              <Route path="/login" element={<LoginForm />} />
+              <Route path="/cart" element={
+                <ProtectedRoute roles={['ROLE_USER', 'USER']}>
+                  <Cart />
+                </ProtectedRoute>
+              } />
+              <Route path="/checkout" element={
+                <ProtectedRoute roles={['ROLE_USER', 'USER']}>
+                  <CheckoutForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute roles={['ROLE_USER', 'USER']}>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/login" element={<Login />} />
               <Route path="/business-login" element={<LoginForm isBusinessLogin={true} />} />
               <Route path="/register" element={<Register />} />
               <Route path="/category/mobiles" element={<MobileProducts />} />

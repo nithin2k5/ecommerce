@@ -4,7 +4,9 @@ import com.ecommerce.dto.JwtResponse;
 import com.ecommerce.dto.LoginRequest;
 import com.ecommerce.dto.MessageResponse;
 import com.ecommerce.dto.SignupRequest;
+import com.ecommerce.model.CustomerDetails;
 import com.ecommerce.model.User;
+import com.ecommerce.repository.CustomerDetailsRepository;
 import com.ecommerce.repository.UserRepository;
 import com.ecommerce.security.JwtUtils;
 import jakarta.validation.Valid;
@@ -38,6 +40,9 @@ public class AuthController {
 
     @Autowired
     UserRepository userRepository;
+    
+    @Autowired
+    CustomerDetailsRepository customerDetailsRepository;
 
     @Autowired
     PasswordEncoder encoder;
@@ -81,37 +86,64 @@ public class AuthController {
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        // Create new user's account
-        User user = new User();
-        user.setUsername(signUpRequest.getUsername());
-        user.setEmail(signUpRequest.getEmail());
-        user.setPassword(encoder.encode(signUpRequest.getPassword()));
-        user.setFullName(signUpRequest.getFullName());
-
-        Set<String> strRoles = signUpRequest.getRoles();
-        Set<String> roles = new HashSet<>();
-
-        if (strRoles == null || strRoles.isEmpty()) {
-            roles.add("ROLE_USER");
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin":
-                        roles.add("ROLE_ADMIN");
-                        break;
-                    case "business":
-                        roles.add("ROLE_BUSINESS");
-                        break;
-                    default:
-                        roles.add("ROLE_USER");
-                }
-            });
+        try {
+            // Create new user's account
+            User user = new User();
+            user.setUsername(signUpRequest.getUsername());
+            user.setEmail(signUpRequest.getEmail());
+            user.setPassword(encoder.encode(signUpRequest.getPassword()));
+            user.setFullName(signUpRequest.getFullName());
+    
+            Set<String> strRoles = signUpRequest.getRoles();
+            Set<String> roles = new HashSet<>();
+    
+            if (strRoles == null || strRoles.isEmpty()) {
+                roles.add("ROLE_USER");
+            } else {
+                strRoles.forEach(role -> {
+                    switch (role) {
+                        case "admin":
+                            roles.add("ROLE_ADMIN");
+                            break;
+                        case "business":
+                            roles.add("ROLE_BUSINESS");
+                            break;
+                        default:
+                            roles.add("ROLE_USER");
+                    }
+                });
+            }
+    
+            user.setRoles(roles);
+            User savedUser = userRepository.save(user);
+            
+            // Save customer details if provided
+            boolean hasCustomerDetails = signUpRequest.getPhone() != null || 
+                                        signUpRequest.getStreet() != null || 
+                                        signUpRequest.getCity() != null || 
+                                        signUpRequest.getState() != null || 
+                                        signUpRequest.getZipCode() != null || 
+                                        signUpRequest.getCountry() != null;
+                                        
+            if (hasCustomerDetails) {
+                CustomerDetails customerDetails = new CustomerDetails();
+                customerDetails.setUser(savedUser);
+                customerDetails.setPhone(signUpRequest.getPhone());
+                customerDetails.setStreet(signUpRequest.getStreet());
+                customerDetails.setCity(signUpRequest.getCity());
+                customerDetails.setState(signUpRequest.getState());
+                customerDetails.setZipCode(signUpRequest.getZipCode());
+                customerDetails.setCountry(signUpRequest.getCountry());
+                
+                customerDetailsRepository.save(customerDetails);
+            }
+    
+            return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: " + e.getMessage()));
         }
-
-        user.setRoles(roles);
-        userRepository.save(user);
-
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
     
     @PostMapping("/business/signup")
@@ -136,21 +168,27 @@ public class AuthController {
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        // Create new business user
-        User user = new User();
-        user.setUsername(signUpRequest.getUsername());
-        user.setEmail(signUpRequest.getEmail());
-        user.setPassword(encoder.encode(signUpRequest.getPassword()));
-        user.setFullName(signUpRequest.getFullName());
-        
-        // Assign business role
-        Set<String> roles = new HashSet<>();
-        roles.add("ROLE_BUSINESS");
-        user.setRoles(roles);
-        
-        userRepository.save(user);
-
-        return ResponseEntity.ok(new MessageResponse("Business account registered successfully!"));
+        try {
+            // Create new business user
+            User user = new User();
+            user.setUsername(signUpRequest.getUsername());
+            user.setEmail(signUpRequest.getEmail());
+            user.setPassword(encoder.encode(signUpRequest.getPassword()));
+            user.setFullName(signUpRequest.getFullName());
+            
+            // Assign business role
+            Set<String> roles = new HashSet<>();
+            roles.add("ROLE_BUSINESS");
+            user.setRoles(roles);
+            
+            userRepository.save(user);
+    
+            return ResponseEntity.ok(new MessageResponse("Business account registered successfully!"));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/status")

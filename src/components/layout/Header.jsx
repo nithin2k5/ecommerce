@@ -1,38 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { FaShoppingCart, FaSearch, FaUser, FaBox } from 'react-icons/fa';
+import { useSelector, useDispatch } from 'react-redux';
+import { FaShoppingCart, FaSearch, FaUser, FaBox, FaSignOutAlt, FaCaretDown } from 'react-icons/fa';
 import '../../styles/Header.css';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { items } = useSelector((state) => state.cart);
-  const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isBusinessAdmin, setIsBusinessAdmin] = useState(false);
-  const [userName, setUserName] = useState('');
+  const dispatch = useDispatch();
   
-  // Check auth status whenever the component renders
+  // Add null checks for Redux state
+  const cart = useSelector((state) => state.cart) || { items: [] };
+  const auth = useSelector((state) => state.auth) || { isAuthenticated: false, user: null };
+  
+  // Safe destructuring after null checks
+  const { items = [] } = cart;
+  const { isAuthenticated = false, user = null } = auth;
+  
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userAuthenticated, setUserAuthenticated] = useState(false);
+  const [localUser, setLocalUser] = useState(null);
+  const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0);
+  
+  // Check authentication status on component mount and when auth changes
   useEffect(() => {
-    const checkAuthStatus = () => {
-      const token = localStorage.getItem('token');
-      const businessToken = localStorage.getItem('businessToken');
-      const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+    // Check if user is authenticated from Redux or localStorage
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    
+    try {
+      // Parse the user from localStorage if it exists
+      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
       
-      setIsLoggedIn(token !== null || businessToken !== null);
-      setIsBusinessAdmin(user?.roles?.includes('BUSINESS_ADMIN') || false);
-      setUserName(user?.name || '');
-    };
-    
-    checkAuthStatus();
-    
-    // Add event listener for storage changes
-    window.addEventListener('storage', checkAuthStatus);
-    
-    return () => {
-      window.removeEventListener('storage', checkAuthStatus);
-    };
-  }, []);
+      // Update local user state
+      setLocalUser(parsedUser || user);
+      
+      // Set authentication status
+      const isAuth = isAuthenticated || !!token;
+      setUserAuthenticated(isAuth);
+      
+      console.log('Header Auth Status:', { 
+        reduxAuth: isAuthenticated, 
+        reduxUser: user,
+        localStorageToken: !!token,
+        localStorageUser: parsedUser,
+        effectiveUser: parsedUser || user,
+        isAuthenticated: isAuth
+      });
+      
+      // If we have a token but no Redux user, sync Redux with localStorage
+      if (token && !isAuthenticated && parsedUser) {
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: {
+            username: parsedUser.username,
+            roles: parsedUser.roles,
+            token: token
+          }
+        });
+        console.log('Synchronized Redux state with localStorage');
+      }
+    } catch (error) {
+      console.error('Error processing authentication state:', error);
+    }
+  }, [isAuthenticated, user, dispatch]);
+  
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
   
   const handleLogout = () => {
     // Clear all auth tokens and user data
@@ -40,14 +74,22 @@ const Header = () => {
     localStorage.removeItem('businessToken');
     localStorage.removeItem('user');
     
-    // Update state
-    setIsLoggedIn(false);
-    setIsBusinessAdmin(false);
-    setUserName('');
+    // Dispatch logout action to Redux
+    dispatch({ type: 'LOGOUT' });
+    
+    // Update local state
+    setUserAuthenticated(false);
+    setLocalUser(null);
     
     // Redirect to home
     navigate('/');
+    
+    // Close dropdown
+    setDropdownOpen(false);
   };
+
+  // Get the effective user (either from Redux or localStorage)
+  const effectiveUser = user || localUser;
 
   return (
     <header className="header">
@@ -74,20 +116,45 @@ const Header = () => {
             <span>Orders</span>
           </Link>
           
-          <Link to="/business-login" className="nav-link">
-            <FaUser />
-            <span>Business Login</span>
-          </Link>
-
-          <Link to="/login" className="nav-link">
-            <FaUser />
-            <span>Login</span>
-          </Link>
-          
           <Link to="/cart" className="cart-link">
             <FaShoppingCart />
             <span>Cart ({cartItemsCount})</span>
           </Link>
+          
+          {userAuthenticated && effectiveUser ? (
+            <div className="user-menu">
+              <div className="user-menu-trigger" onClick={toggleDropdown}>
+                <FaUser className="user-icon" />
+                <span className="username">{effectiveUser.username}</span>
+                <FaCaretDown />
+              </div>
+              
+              {dropdownOpen && (
+                <div className="user-dropdown">
+                  <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                    My Profile
+                  </Link>
+                  <div className="dropdown-divider"></div>
+                  <button onClick={handleLogout} className="dropdown-item logout-btn">
+                    <FaSignOutAlt className="logout-icon" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <Link to="/business-login" className="nav-link">
+                <FaUser />
+                <span>Business Login</span>
+              </Link>
+
+              <Link to="/login" className="nav-link">
+                <FaUser />
+                <span>Login</span>
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
